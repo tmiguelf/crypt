@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Export">
-      <UniqueIdentifier>{2bc57ff5-c123-4941-8313-f4b58b7c181f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
@@ -17,30 +14,11 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="Source Files\hash">
-      <UniqueIdentifier>{147e2617-383a-4449-b244-86f15f5672a4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\hash">
-      <UniqueIdentifier>{4aea4ff1-780c-45dd-b6bc-df1ae6792897}</UniqueIdentifier>
+      <UniqueIdentifier>{8c553da0-36fe-4e37-81c7-2c89de654f5e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Crypt.include.props">
-      <Filter>Export</Filter>
-    </None>
-    <None Include="Crypt.import.props">
-      <Filter>Export</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="include\Crypt\utils.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Crypt\hash\crc.hpp">
-      <Filter>Header Files\hash</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\hash\crc.cpp">
+    <ClCompile Include="src\hash\test_crc.cpp">
       <Filter>Source Files\hash</Filter>
     </ClCompile>
   </ItemGroup>

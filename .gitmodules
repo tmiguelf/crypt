@@ -1,6 +1,12 @@
 [submodule "submodules/quickMSBuild"]
 	path = submodules/quickMSBuild
 	url = https://github.com/tmiguelf/quickMSBuild.git
+	ignore = dirty
 [submodule "submodules/utilities"]
 	path = submodules/utilities
 	url = https://github.com/tmiguelf/utilities.git
+	ignore = dirty
+[submodule "submodules/googletest"]
+	path = submodules/googletest
+	url = https://github.com/tmiguelf/googletest.git
+	ignore = dirty

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{56b2ff4b-ee30-4fa4-9fb7-52dbbcebd904}</ProjectGuid>
+    <ProjectGuid>{1dcc02af-48e7-4a4a-952c-a8587e997e41}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -20,6 +20,9 @@
       <Configuration>WSL_Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\hash\test_crc.cpp" />
   </ItemGroup>
   <PropertyGroup Label="quickMSBuild" Condition="'$(Configuration)'=='Debug'">
     <CompilerFlavour>MSVC</CompilerFlavour>
@@ -42,29 +45,21 @@
     <UseDebugLibraries>false</UseDebugLibraries>
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
   </PropertyGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(SolutionDir)locations.props" />
     <Import Project="$(quickMSBuildPath)default.cpp.props" />
-    <Import Project="$(CoreLibPath)CoreLib.include.props" />
+    <Import Project="$(googletestPath)googletest.import.props" />
+    <Import Project="$(googlemockPath)googlemock.import.props" />
+    <Import Project="$(CoreLibPath)CoreLib.import.props" />
+    <Import Project="$(ProjectDir)../Crypt.import.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <None Include="Crypt.import.props" />
-    <None Include="Crypt.include.props" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="include\Crypt\hash\crc.hpp" />
-    <ClInclude Include="include\Crypt\utils.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\hash\crc.cpp" />
-  </ItemGroup>
   <Import Project="$(quickMSBuildPath)default.cpp.targets" />
 </Project>
