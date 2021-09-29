@@ -31,58 +31,109 @@
 #include <CoreLib/Core_Type.hpp>
 #include <CoreLib/toPrint/toPrint.hpp>
 #include <CoreLib/toPrint/toPrint_std_ostream.hpp>
+#include <CoreLib/Core_Endian.hpp>
+
 
 #include <Crypt/hash/crc.hpp>
+#include <Crypt/utils.hpp>
+
+#include <test_utils.hpp>
+
 
 using core::literals::operator "" _ui8;
 using core::literals::operator "" _ui32;
+using core::literals::operator "" _ui64;
 
 TEST(Hash, CRC_32C)
 {
+	testUtils::fileHashList testList = testUtils::getFileHashList("../test_vectors/tests.scef", U"CRC_32C", 4);
+	ASSERT_FALSE(testList.empty());
+
 	crypt::CRC_32C engine;
 
-	std::array data =
+	ASSERT_EQ(engine.digest(), 0x0_ui32);
+
+	uintptr_t case_count = 0;
+	for(const testUtils::HashPair& testcase : testList)
 	{
-		0x00_ui8,
-		0x01_ui8,
-		0x02_ui8,
-		0x03_ui8,
-		0x04_ui8,
-		0x05_ui8,
-		0x06_ui8,
-		0x07_ui8,
-		0x08_ui8,
-		0x09_ui8,
-		0x0A_ui8,
-		0x0B_ui8,
-		0x0C_ui8,
-		0x0D_ui8,
-		0x0E_ui8,
-		0x0F_ui8,
-		0x10_ui8,
-		0x11_ui8,
-		0x12_ui8,
-		0x13_ui8,
-		0x14_ui8,
-		0x15_ui8,
-		0x16_ui8,
-		0x17_ui8,
-		0x18_ui8,
-		0x19_ui8,
-		0x1A_ui8,
-		0x1B_ui8,
-		0x1C_ui8,
-		0x1D_ui8,
-		0x1E_ui8,
-		0x1F_ui8,
-	};
+		const std::vector<uint8_t> test_data = testUtils::getFileData(testcase.file);
+		const uintptr_t data_size = test_data.size();
+		std::vector<uint8_t> aligned_data;
+		aligned_data.resize(data_size + 8);
 
-	//engine.update(data);
+		const uintptr_t alignMod = crypt::align_mod<8>(aligned_data.data());
 
-	engine.update(
-		std::span<const uint64_t>{reinterpret_cast<const uint64_t*>(data.data()),
-		data.size() / 8});
+		for(uint8_t i = 0; i < 8; ++i)
+		{
+			engine.reset();
+			memcpy(aligned_data.data() + i, test_data.data(), data_size);
 
-	EXPECT_EQ(engine.digest(), 0xB92286B1_ui32);
+			engine.update(std::span<const uint8_t>{aligned_data.data() + i, data_size});
+
+
+			const uintptr_t alignment = (alignMod + i) & (0x07);
+			const uint32_t digest = core::endian_host2big(engine.digest());
+
+
+			const bool result = (memcmp(&digest, testcase.hash.data(), 4) == 0);
+
+			ASSERT_TRUE(result)
+				<<   "Expected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), 4}}
+				<< "\nActual:   " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), 4}}
+				<< "\nCase " << case_count << " alignment " << alignment;
+		}
+		++case_count;
+	}
+
+}
+
+TEST(Hash, CRC_64)
+{
+	testUtils::fileHashList testList = testUtils::getFileHashList("../test_vectors/tests.scef", U"CRC_64", 8);
+	ASSERT_FALSE(testList.empty());
+
+	crypt::CRC_64 engine;
+
+	ASSERT_EQ(engine.digest(), 0x0_ui64);
+
+	uint8_t test = 'A';
+	engine.update(std::span<const uint8_t>{&test, 1});
+
+	uint64_t res = engine.digest();
+
+	ASSERT_EQ(res, 0x98F5E3FE438617BC) << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&res), 8}};
+
+	uintptr_t case_count = 0;
+	for(const testUtils::HashPair& testcase : testList)
+	{
+		const std::vector<uint8_t> test_data = testUtils::getFileData(testcase.file);
+		const uintptr_t data_size = test_data.size();
+		std::vector<uint8_t> aligned_data;
+		aligned_data.resize(data_size + 8);
+
+		const uintptr_t alignMod = crypt::align_mod<8>(aligned_data.data());
+
+		for(uint8_t i = 0; i < 8; ++i)
+		{
+			engine.reset();
+			memcpy(aligned_data.data() + i, test_data.data(), data_size);
+
+			engine.update(std::span<const uint8_t>{aligned_data.data() + i, data_size});
+
+
+			const uintptr_t alignment = (alignMod + i) & (0x07);
+			const uint64_t digest = core::endian_host2big(engine.digest());
+
+
+			const bool result = (memcmp(&digest, testcase.hash.data(), 8) == 0);
+
+			ASSERT_TRUE(result)
+				<<   "Expected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), 8}}
+				<< "\nActual:   " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), 8}}
+			<< "\nCase " << case_count << " alignment " << alignment;
+		}
+		++case_count;
+	}
+
 }
 

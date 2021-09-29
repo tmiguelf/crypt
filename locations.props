@@ -10,6 +10,7 @@
 		<Import Project="$(MSBuildThisFileDirectory)repoLocations.props" />
 		<Import Project="$(MSBuildThisFileDirectory)submodules/quickMSBuild/repoLocations.props" />
 		<Import Project="$(MSBuildThisFileDirectory)submodules/utilities/repoLocations.props" />
+		<Import Project="$(MSBuildThisFileDirectory)submodules/SCEF/repoLocations.props" />
 		<Import Project="$(MSBuildThisFileDirectory)submodules/googletest/repoLocations.props" />
 	</ImportGroup>
 </Project>

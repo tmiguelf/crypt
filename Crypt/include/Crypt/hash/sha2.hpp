@@ -26,52 +26,56 @@
 #pragma once
 
 #include <cstdint>
+#include <array>
 #include <span>
 
 namespace crypt
 {
 
-class CRC_32C
+class SHA2_256
 {
 public:
+	using block_t  = std::array<uint32_t, 16>;
 
-	static inline constexpr uint32_t default_init() { return 0xFFFFFFFF; };
-	static uint32_t trasform(uint32_t p_current, std::span<const uint8_t> p_data);
-	static uint32_t trasform(uint32_t p_current, std::span<const uint64_t> p_data);
+	using digest_t = std::array<uint32_t, 8>;
 
 public:
+	static inline constexpr digest_t default_init()
+	{ 
+		return
+		{
+			0x6A09E667,
+			0xBB67AE85,
+			0x3C6EF372,
+			0xA54FF53A,
+			0x510E527F,
+			0x9B05688C,
+			0x1F83D9AB,
+			0x5BE0CD19
+		};
+	};
+
+	static void trasform(digest_t& p_digest, std::span<const block_t> p_data);
+	static void trasform_final(digest_t& p_digest, std::span<const uint8_t> p_data, uint64_t p_totalSize);
+public:
+
 	inline void reset() { m_context = default_init(); }
-	inline void set(uint32_t p_digest) { m_context = p_digest; }
+	inline void set(digest_t p_digest) { m_context = p_digest; }
 
-	inline uint32_t digest() const { return m_context ^ 0xFFFFFFFF; }
-
-	inline void update(std::span<const uint8_t > p_data) { m_context = trasform(m_context, p_data); }
-	inline void update(std::span<const uint64_t> p_data) { m_context = trasform(m_context, p_data); }
+	void update(std::span<const block_t> p_data);
+	void update_final(std::span<const uint8_t> p_data, uint64_t p_totalSize);
 
 private:
-	uint32_t m_context = default_init();
+	alignas(8) digest_t m_context = default_init();
 };
 
-
-class CRC_64
+class SHA2_512
 {
 public:
-
-	static inline constexpr uint64_t default_init() { return 0x0000000000000000; };
-	static uint64_t trasform(uint64_t p_current, std::span<const uint8_t> p_data);
-	static uint64_t trasform(uint64_t p_current, std::span<const uint64_t> p_data);
-
-public:
-	inline void reset() { m_context = default_init(); }
-	inline void set(uint64_t p_digest) { m_context = p_digest; }
-
-	inline uint64_t digest() const { return m_context; }
-
-	inline void update(std::span<const uint8_t > p_data) { m_context = trasform(m_context, p_data); }
-	inline void update(std::span<const uint64_t> p_data) { m_context = trasform(m_context, p_data); }
+	using digest_t = std::array<uint64_t, 8>;
 
 private:
-	uint64_t m_context = default_init();
+	alignas(8) digest_t m_data;
 };
 
 } //namespace crypt

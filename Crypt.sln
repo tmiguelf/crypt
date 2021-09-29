@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CryptTest", "Crypt\test\Cry
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CoreLib", "submodules\utilities\CoreLib\CoreLib.vcxproj", "{EA04E8E6-B05B-416E-B0A3-218406672173}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SCEF", "submodules\SCEF\SCEF\SCEF.vcxproj", "{E02AD9B7-192B-490C-8CAC-85726836FB18}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -61,6 +63,14 @@ Global
 		{EA04E8E6-B05B-416E-B0A3-218406672173}.WSL_Debug|x64.Build.0 = WSL_Debug|x64
 		{EA04E8E6-B05B-416E-B0A3-218406672173}.WSL_Release|x64.ActiveCfg = WSL_Release|x64
 		{EA04E8E6-B05B-416E-B0A3-218406672173}.WSL_Release|x64.Build.0 = WSL_Release|x64
+		{E02AD9B7-192B-490C-8CAC-85726836FB18}.Debug|x64.ActiveCfg = Debug|x64
+		{E02AD9B7-192B-490C-8CAC-85726836FB18}.Debug|x64.Build.0 = Debug|x64
+		{E02AD9B7-192B-490C-8CAC-85726836FB18}.Release|x64.ActiveCfg = Release|x64
+		{E02AD9B7-192B-490C-8CAC-85726836FB18}.Release|x64.Build.0 = Release|x64
+		{E02AD9B7-192B-490C-8CAC-85726836FB18}.WSL_Debug|x64.ActiveCfg = WSL_Debug|x64
+		{E02AD9B7-192B-490C-8CAC-85726836FB18}.WSL_Debug|x64.Build.0 = WSL_Debug|x64
+		{E02AD9B7-192B-490C-8CAC-85726836FB18}.WSL_Release|x64.ActiveCfg = WSL_Release|x64
+		{E02AD9B7-192B-490C-8CAC-85726836FB18}.WSL_Release|x64.Build.0 = WSL_Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -21,5 +21,16 @@
     <ClCompile Include="src\hash\test_crc.cpp">
       <Filter>Source Files\hash</Filter>
     </ClCompile>
+    <ClCompile Include="src\hash\test_sha2.cpp">
+      <Filter>Source Files\hash</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\test_utils.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

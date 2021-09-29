@@ -21,9 +21,6 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\hash\test_crc.cpp" />
-  </ItemGroup>
   <PropertyGroup Label="quickMSBuild" Condition="'$(Configuration)'=='Debug'">
     <CompilerFlavour>MSVC</CompilerFlavour>
     <BuildMethod>native</BuildMethod>
@@ -53,13 +50,25 @@
     <Import Project="$(googletestPath)googletest.import.props" />
     <Import Project="$(googlemockPath)googlemock.import.props" />
     <Import Project="$(CoreLibPath)CoreLib.import.props" />
+    <Import Project="$(SCEFPath)SCEF.import.props" />
     <Import Project="$(ProjectDir)../Crypt.import.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\hash\test_crc.cpp" />
+    <ClCompile Include="src\hash\test_sha2.cpp" />
+    <ClCompile Include="src\test_utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\test_utils.hpp" />
+  </ItemGroup>
   <Import Project="$(quickMSBuildPath)default.cpp.targets" />
 </Project>

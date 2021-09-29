@@ -25,6 +25,7 @@
 
 #include <Crypt/hash/crc.hpp>
 
+#include <array>
 #include <bit>
 
 #include <CoreLib/Core_Type.hpp>
@@ -40,55 +41,55 @@
 namespace crypt
 {
 using core::literals::operator "" _ui32;
+using core::literals::operator "" _ui64;
 using core::literals::operator "" _uip;
 
 #if defined(_M_AMD64) || defined(__SSE4_2__)
-void CRC_32C::update(std::span<const uint8_t> const p_data)
+
+uint32_t CRC_32C::trasform(uint32_t p_current, const std::span<const uint8_t> p_data)
 {
 	const uintptr_t			size  = p_data.size();
 	const uint8_t*			pivot = p_data.data();
 	const uint8_t* const	last  = pivot + size;
 
-	uint32_t context = m_context;
 	{
 		const uintptr_t off_align = align_t_mod<uint64_t>(pivot);
-		if((alignof(uint64_t) - off_align) < size)
+		if((alignof(uint64_t) - off_align) > size)
 		{
 			for(const uint8_t tpoint : p_data)
 			{
-				context = _mm_crc32_u8(context, tpoint);
+				p_current = _mm_crc32_u8(p_current, tpoint);
 			}
-			m_context = context;
-			return;
+			return p_current;
 		}
 
 		switch(off_align)
 		{
 		case 1:
-			context = _mm_crc32_u8(context, *pivot++);
+			p_current = _mm_crc32_u8(p_current, *pivot++);
 			[[fallthrough]];
 		case 2:
-			context = _mm_crc32_u16(context, *reinterpret_cast<const uint16_t*>(pivot));
+			p_current = _mm_crc32_u16(p_current, *reinterpret_cast<const uint16_t*>(pivot));
 			pivot += 2;
 			[[fallthrough]];
 		case 4:
-			context = _mm_crc32_u32(context, *reinterpret_cast<const uint32_t*>(pivot));
+			p_current = _mm_crc32_u32(p_current, *reinterpret_cast<const uint32_t*>(pivot));
 			pivot += 4;
 			break;
 		case 3:
-			context = _mm_crc32_u8(context, *pivot++);
-			context = _mm_crc32_u32(context, *reinterpret_cast<const uint32_t*>(pivot));
+			p_current = _mm_crc32_u8(p_current, *pivot++);
+			p_current = _mm_crc32_u32(p_current, *reinterpret_cast<const uint32_t*>(pivot));
 			pivot += 4;
 			break;
 		case 5:
-			context = _mm_crc32_u8(context, *pivot++);
+			p_current = _mm_crc32_u8(p_current, *pivot++);
 			[[fallthrough]];
 		case 6:
-			context = _mm_crc32_u16(context, *reinterpret_cast<const uint16_t*>(pivot));
+			p_current = _mm_crc32_u16(p_current, *reinterpret_cast<const uint16_t*>(pivot));
 			pivot += 2;
 			break;
 		case 7:
-			context = _mm_crc32_u8(context, *pivot++);
+			p_current = _mm_crc32_u8(p_current, *pivot++);
 			break;
 		default:
 		case 0:
@@ -97,68 +98,67 @@ void CRC_32C::update(std::span<const uint8_t> const p_data)
 	}
 
 	{
-		uint64_t context64 = context;
+		uint64_t context64 = p_current;
 		for(; (last - pivot) >= 8; pivot += 8)
 		{
 			context64 = _mm_crc32_u64(context64, *reinterpret_cast<const uint64_t*>(pivot));
 		}
-		context = static_cast<uint32_t>(context64);
+		p_current = static_cast<uint32_t>(context64);
 	}
 
 	switch(last - pivot)
 	{
 	case 7:
-		context = _mm_crc32_u8(context, *pivot++);
+		p_current = _mm_crc32_u8(p_current, *pivot++);
 		[[fallthrough]];
 	case 6:
-		context = _mm_crc32_u16(context, *reinterpret_cast<const uint16_t*>(pivot));
+		p_current = _mm_crc32_u16(p_current, *reinterpret_cast<const uint16_t*>(pivot));
 		pivot += 2;
 		[[fallthrough]];
 	case 4:
-		context = _mm_crc32_u32(context, *reinterpret_cast<const uint32_t*>(pivot));
+		p_current = _mm_crc32_u32(p_current, *reinterpret_cast<const uint32_t*>(pivot));
 		break;
 	case 5:
-		context = _mm_crc32_u8(context, *pivot++);
-		context = _mm_crc32_u32(context, *reinterpret_cast<const uint32_t*>(pivot));
+		p_current = _mm_crc32_u8(p_current, *pivot++);
+		p_current = _mm_crc32_u32(p_current, *reinterpret_cast<const uint32_t*>(pivot));
 		break;
 	case 3:
-		context = _mm_crc32_u8(context, *pivot++);
+		p_current = _mm_crc32_u8(p_current, *pivot++);
 		[[fallthrough]];
 	case 2:
-		context = _mm_crc32_u16(context, *reinterpret_cast<const uint16_t*>(pivot));
+		p_current = _mm_crc32_u16(p_current, *reinterpret_cast<const uint16_t*>(pivot));
 		break;
 	case 1:
-		context = _mm_crc32_u8(context, *pivot);
+		p_current = _mm_crc32_u8(p_current, *pivot);
 		break;
 	default:
 	case 0:
 		break;
 	}
 
-	m_context = context;
+	return p_current;
 }
 
-void CRC_32C::update(std::span<const uint64_t> p_data)
+uint32_t CRC_32C::trasform(const uint32_t p_current, const std::span<const uint64_t> p_data)
 {
-	uint64_t context64 = m_context;
+	uint64_t context64 = p_current;
 	for(const uint64_t tpoint : p_data)
 	{
 		context64 = _mm_crc32_u64(context64, tpoint);
 	}
-	m_context = static_cast<uint32_t>(context64);
+	return static_cast<uint32_t>(context64);
 }
-
 
 #else
 
-static constexpr std::array<uint32_t, 256> CRC32C_table_f()
+static_assert(std::endian::native == std::endian::little, "Unsuported endianess");
+namespace
 {
-	static_assert(std::endian::native == std::endian::little, "Unsuported endianess");
-	if constexpr (std::endian::native == std::endian::little)
+	struct CRC32C_Help
 	{
-		return std::array<uint32_t, 256>
-		{
-			0x00000000_ui32, 0xF26B8303_ui32, 0xE13B70F7_ui32, 0x1350F3F4_ui32,
+		static constexpr std::array<uint32_t, 256> CRC32C_table =
+			{
+				0x00000000_ui32, 0xF26B8303_ui32, 0xE13B70F7_ui32, 0x1350F3F4_ui32,
 				0xC79A971F_ui32, 0x35F1141C_ui32, 0x26A1E7E8_ui32, 0xD4CA64EB_ui32,
 				0x8AD958CF_ui32, 0x78B2DBCC_ui32, 0x6BE22838_ui32, 0x9989AB3B_ui32,
 				0x4D43CFD0_ui32, 0xBF284CD3_ui32, 0xAC78BF27_ui32, 0x5E133C24_ui32,
@@ -222,61 +222,58 @@ static constexpr std::array<uint32_t, 256> CRC32C_table_f()
 				0x34F4F86A_ui32, 0xC69F7B69_ui32, 0xD5CF889D_ui32, 0x27A40B9E_ui32,
 				0x79B737BA_ui32, 0x8BDCB4B9_ui32, 0x988C474D_ui32, 0x6AE7C44E_ui32,
 				0xBE2DA0A5_ui32, 0x4C4623A6_ui32, 0x5F16D052_ui32, 0xAD7D5351_ui32
-		};
-	}
-}
+			};
 
-static constexpr std::array CRC32C_table = CRC32C_table_f();
+		static inline uint32_t soft_u8(const uint32_t p_context, const uint8_t p_new)
+		{
+			if constexpr(std::endian::native == std::endian::little)
+			{
+				return CRC32C_table[static_cast<uint8_t>(p_context) ^ p_new] ^ (p_context >> 8);
+			}
+		}
 
-static inline uint32_t soft_CRC_32C_u8(const uint32_t p_context, const uint8_t p_new)
-{
-	if constexpr(std::endian::native == std::endian::little)
-	{
-		return CRC32C_table[static_cast<uint8_t>(p_context & 0xFF) ^ p_new] ^ (p_context >> 8);
-	}
-}
+		static inline uint32_t soft_u32(uint32_t p_context, const uint32_t p_new)
+		{
+			if constexpr(std::endian::native == std::endian::little)
+			{
+				p_context ^= p_new;
+				p_context = CRC32C_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
+				p_context = CRC32C_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
+				p_context = CRC32C_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
+				return CRC32C_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
+			}
+		}
+	};
 
-static inline uint32_t soft_CRC_32C_u32(uint32_t p_context, const uint32_t p_new)
-{
-	if constexpr(std::endian::native == std::endian::little)
-	{
-		p_context ^= p_new;
-		p_context = CRC32C_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
-		p_context = CRC32C_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
-		p_context = CRC32C_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
-		return CRC32C_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
-	}
-}
+} //namespace
 
-void CRC_32C::update(std::span<const uint8_t> const p_data)
+uint32_t CRC_32C::trasform(uint32_t p_current, const std::span<const uint8_t> p_data)
 {
 	const uintptr_t			size  = p_data.size();
 	const uint8_t*			pivot = p_data.data();
 	const uint8_t* const	last  = pivot + size;
 
-	uint32_t context = m_context;
 	{
 		const uintptr_t off_align = align_t_mod<uint32_t>(pivot);
-		if((alignof(uint32_t) - off_align) < size)
+		if((alignof(uint32_t) - off_align) > size)
 		{
 			for(const uint8_t tpoint : p_data)
 			{
-				context = soft_CRC_32C_u8(context, tpoint);
+				p_current = CRC32C_Help::soft_u8(p_current, tpoint);
 			}
-			m_context = context;
-			return;
+			return p_current;
 		}
 
 		switch(off_align)
 		{
 		case 1:
-			context = soft_CRC_32C_u8(context, *pivot++);
+			p_current = CRC32C_Help::soft_u8(p_current, *pivot++);
 			[[fallthrough]];
 		case 2:
-			context = soft_CRC_32C_u8(context, *pivot++);
+			p_current = CRC32C_Help::soft_u8(p_current, *pivot++);
 			[[fallthrough]];
 		case 3:
-			context = soft_CRC_32C_u8(context, *pivot++);
+			p_current = CRC32C_Help::soft_u8(p_current, *pivot++);
 			break;
 		default:
 		case 0:
@@ -286,39 +283,235 @@ void CRC_32C::update(std::span<const uint8_t> const p_data)
 
 	for(; (last - pivot) >= 4; pivot += 4)
 	{
-		context = soft_CRC_32C_u32(context, *reinterpret_cast<const uint32_t*>(pivot));
+		p_current = CRC32C_Help::soft_u32(p_current, *reinterpret_cast<const uint32_t*>(pivot));
 	}
 
 	switch(last - pivot)
 	{
 	case 3:
-		context = soft_CRC_32C_u8(context, *pivot++);
+		p_current = CRC32C_Help::soft_u8(p_current, *pivot++);
 		[[fallthrough]];
 	case 2:
-		context = soft_CRC_32C_u8(context, *pivot++);
+		p_current = CRC32C_Help::soft_u8(p_current, *pivot++);
 		[[fallthrough]];
 	case 1:
-		context = soft_CRC_32C_u8(context, *pivot);
+		p_current = CRC32C_Help::soft_u8(p_current, *pivot);
 		break;
 	default:
 	case 0:
 		break;
 	}
 
-	m_context = context;
+	return p_current;
 }
 
-void CRC_32C::update(std::span<const uint64_t> p_data)
+uint32_t CRC_32C::trasform(uint32_t p_current, const std::span<const uint64_t> p_data)
 {
-	uint32_t context = m_context;
 	for(const uint64_t tpoint : p_data)
 	{
-		context = soft_CRC_32C_u32(context, *reinterpret_cast<const uint32_t*>(&tpoint));
-		context = soft_CRC_32C_u32(context, *(reinterpret_cast<const uint32_t*>(&tpoint) + 1));
+		p_current = CRC32C_Help::soft_u32(p_current, *reinterpret_cast<const uint32_t*>(&tpoint));
+		p_current = CRC32C_Help::soft_u32(p_current, *(reinterpret_cast<const uint32_t*>(&tpoint) + 1));
 	}
-	m_context = context;
+	return p_current;
 }
 
 #endif
+
+
+
+
+
+
+static_assert(std::endian::native == std::endian::little, "Unsuported endianess");
+namespace
+{
+	struct CRC64_Help
+	{
+		static constexpr std::array<uint64_t, 256> CRC64_table =
+		{
+			0x0000000000000000_ui64, 0xB32E4CBE03A75F6F_ui64, 0xF4843657A840A05B_ui64, 0x47AA7AE9ABE7FF34_ui64,
+			0x7BD0C384FF8F5E33_ui64, 0xC8FE8F3AFC28015C_ui64, 0x8F54F5D357CFFE68_ui64, 0x3C7AB96D5468A107_ui64,
+			0xF7A18709FF1EBC66_ui64, 0x448FCBB7FCB9E309_ui64, 0x0325B15E575E1C3D_ui64, 0xB00BFDE054F94352_ui64,
+			0x8C71448D0091E255_ui64, 0x3F5F08330336BD3A_ui64, 0x78F572DAA8D1420E_ui64, 0xCBDB3E64AB761D61_ui64,
+			0x7D9BA13851336649_ui64, 0xCEB5ED8652943926_ui64, 0x891F976FF973C612_ui64, 0x3A31DBD1FAD4997D_ui64,
+			0x064B62BCAEBC387A_ui64, 0xB5652E02AD1B6715_ui64, 0xF2CF54EB06FC9821_ui64, 0x41E11855055BC74E_ui64,
+			0x8A3A2631AE2DDA2F_ui64, 0x39146A8FAD8A8540_ui64, 0x7EBE1066066D7A74_ui64, 0xCD905CD805CA251B_ui64,
+			0xF1EAE5B551A2841C_ui64, 0x42C4A90B5205DB73_ui64, 0x056ED3E2F9E22447_ui64, 0xB6409F5CFA457B28_ui64,
+			0xFB374270A266CC92_ui64, 0x48190ECEA1C193FD_ui64, 0x0FB374270A266CC9_ui64, 0xBC9D3899098133A6_ui64,
+			0x80E781F45DE992A1_ui64, 0x33C9CD4A5E4ECDCE_ui64, 0x7463B7A3F5A932FA_ui64, 0xC74DFB1DF60E6D95_ui64,
+			0x0C96C5795D7870F4_ui64, 0xBFB889C75EDF2F9B_ui64, 0xF812F32EF538D0AF_ui64, 0x4B3CBF90F69F8FC0_ui64,
+			0x774606FDA2F72EC7_ui64, 0xC4684A43A15071A8_ui64, 0x83C230AA0AB78E9C_ui64, 0x30EC7C140910D1F3_ui64,
+			0x86ACE348F355AADB_ui64, 0x3582AFF6F0F2F5B4_ui64, 0x7228D51F5B150A80_ui64, 0xC10699A158B255EF_ui64,
+			0xFD7C20CC0CDAF4E8_ui64, 0x4E526C720F7DAB87_ui64, 0x09F8169BA49A54B3_ui64, 0xBAD65A25A73D0BDC_ui64,
+			0x710D64410C4B16BD_ui64, 0xC22328FF0FEC49D2_ui64, 0x85895216A40BB6E6_ui64, 0x36A71EA8A7ACE989_ui64,
+			0x0ADDA7C5F3C4488E_ui64, 0xB9F3EB7BF06317E1_ui64, 0xFE5991925B84E8D5_ui64, 0x4D77DD2C5823B7BA_ui64,
+			0x64B62BCAEBC387A1_ui64, 0xD7986774E864D8CE_ui64, 0x90321D9D438327FA_ui64, 0x231C512340247895_ui64,
+			0x1F66E84E144CD992_ui64, 0xAC48A4F017EB86FD_ui64, 0xEBE2DE19BC0C79C9_ui64, 0x58CC92A7BFAB26A6_ui64,
+			0x9317ACC314DD3BC7_ui64, 0x2039E07D177A64A8_ui64, 0x67939A94BC9D9B9C_ui64, 0xD4BDD62ABF3AC4F3_ui64,
+			0xE8C76F47EB5265F4_ui64, 0x5BE923F9E8F53A9B_ui64, 0x1C4359104312C5AF_ui64, 0xAF6D15AE40B59AC0_ui64,
+			0x192D8AF2BAF0E1E8_ui64, 0xAA03C64CB957BE87_ui64, 0xEDA9BCA512B041B3_ui64, 0x5E87F01B11171EDC_ui64,
+			0x62FD4976457FBFDB_ui64, 0xD1D305C846D8E0B4_ui64, 0x96797F21ED3F1F80_ui64, 0x2557339FEE9840EF_ui64,
+			0xEE8C0DFB45EE5D8E_ui64, 0x5DA24145464902E1_ui64, 0x1A083BACEDAEFDD5_ui64, 0xA9267712EE09A2BA_ui64,
+			0x955CCE7FBA6103BD_ui64, 0x267282C1B9C65CD2_ui64, 0x61D8F8281221A3E6_ui64, 0xD2F6B4961186FC89_ui64,
+			0x9F8169BA49A54B33_ui64, 0x2CAF25044A02145C_ui64, 0x6B055FEDE1E5EB68_ui64, 0xD82B1353E242B407_ui64,
+			0xE451AA3EB62A1500_ui64, 0x577FE680B58D4A6F_ui64, 0x10D59C691E6AB55B_ui64, 0xA3FBD0D71DCDEA34_ui64,
+			0x6820EEB3B6BBF755_ui64, 0xDB0EA20DB51CA83A_ui64, 0x9CA4D8E41EFB570E_ui64, 0x2F8A945A1D5C0861_ui64,
+			0x13F02D374934A966_ui64, 0xA0DE61894A93F609_ui64, 0xE7741B60E174093D_ui64, 0x545A57DEE2D35652_ui64,
+			0xE21AC88218962D7A_ui64, 0x5134843C1B317215_ui64, 0x169EFED5B0D68D21_ui64, 0xA5B0B26BB371D24E_ui64,
+			0x99CA0B06E7197349_ui64, 0x2AE447B8E4BE2C26_ui64, 0x6D4E3D514F59D312_ui64, 0xDE6071EF4CFE8C7D_ui64,
+			0x15BB4F8BE788911C_ui64, 0xA6950335E42FCE73_ui64, 0xE13F79DC4FC83147_ui64, 0x521135624C6F6E28_ui64,
+			0x6E6B8C0F1807CF2F_ui64, 0xDD45C0B11BA09040_ui64, 0x9AEFBA58B0476F74_ui64, 0x29C1F6E6B3E0301B_ui64,
+			0xC96C5795D7870F42_ui64, 0x7A421B2BD420502D_ui64, 0x3DE861C27FC7AF19_ui64, 0x8EC62D7C7C60F076_ui64,
+			0xB2BC941128085171_ui64, 0x0192D8AF2BAF0E1E_ui64, 0x4638A2468048F12A_ui64, 0xF516EEF883EFAE45_ui64,
+			0x3ECDD09C2899B324_ui64, 0x8DE39C222B3EEC4B_ui64, 0xCA49E6CB80D9137F_ui64, 0x7967AA75837E4C10_ui64,
+			0x451D1318D716ED17_ui64, 0xF6335FA6D4B1B278_ui64, 0xB199254F7F564D4C_ui64, 0x02B769F17CF11223_ui64,
+			0xB4F7F6AD86B4690B_ui64, 0x07D9BA1385133664_ui64, 0x4073C0FA2EF4C950_ui64, 0xF35D8C442D53963F_ui64,
+			0xCF273529793B3738_ui64, 0x7C0979977A9C6857_ui64, 0x3BA3037ED17B9763_ui64, 0x888D4FC0D2DCC80C_ui64,
+			0x435671A479AAD56D_ui64, 0xF0783D1A7A0D8A02_ui64, 0xB7D247F3D1EA7536_ui64, 0x04FC0B4DD24D2A59_ui64,
+			0x3886B22086258B5E_ui64, 0x8BA8FE9E8582D431_ui64, 0xCC0284772E652B05_ui64, 0x7F2CC8C92DC2746A_ui64,
+			0x325B15E575E1C3D0_ui64, 0x8175595B76469CBF_ui64, 0xC6DF23B2DDA1638B_ui64, 0x75F16F0CDE063CE4_ui64,
+			0x498BD6618A6E9DE3_ui64, 0xFAA59ADF89C9C28C_ui64, 0xBD0FE036222E3DB8_ui64, 0x0E21AC88218962D7_ui64,
+			0xC5FA92EC8AFF7FB6_ui64, 0x76D4DE52895820D9_ui64, 0x317EA4BB22BFDFED_ui64, 0x8250E80521188082_ui64,
+			0xBE2A516875702185_ui64, 0x0D041DD676D77EEA_ui64, 0x4AAE673FDD3081DE_ui64, 0xF9802B81DE97DEB1_ui64,
+			0x4FC0B4DD24D2A599_ui64, 0xFCEEF8632775FAF6_ui64, 0xBB44828A8C9205C2_ui64, 0x086ACE348F355AAD_ui64,
+			0x34107759DB5DFBAA_ui64, 0x873E3BE7D8FAA4C5_ui64, 0xC094410E731D5BF1_ui64, 0x73BA0DB070BA049E_ui64,
+			0xB86133D4DBCC19FF_ui64, 0x0B4F7F6AD86B4690_ui64, 0x4CE50583738CB9A4_ui64, 0xFFCB493D702BE6CB_ui64,
+			0xC3B1F050244347CC_ui64, 0x709FBCEE27E418A3_ui64, 0x3735C6078C03E797_ui64, 0x841B8AB98FA4B8F8_ui64,
+			0xADDA7C5F3C4488E3_ui64, 0x1EF430E13FE3D78C_ui64, 0x595E4A08940428B8_ui64, 0xEA7006B697A377D7_ui64,
+			0xD60ABFDBC3CBD6D0_ui64, 0x6524F365C06C89BF_ui64, 0x228E898C6B8B768B_ui64, 0x91A0C532682C29E4_ui64,
+			0x5A7BFB56C35A3485_ui64, 0xE955B7E8C0FD6BEA_ui64, 0xAEFFCD016B1A94DE_ui64, 0x1DD181BF68BDCBB1_ui64,
+			0x21AB38D23CD56AB6_ui64, 0x9285746C3F7235D9_ui64, 0xD52F0E859495CAED_ui64, 0x6601423B97329582_ui64,
+			0xD041DD676D77EEAA_ui64, 0x636F91D96ED0B1C5_ui64, 0x24C5EB30C5374EF1_ui64, 0x97EBA78EC690119E_ui64,
+			0xAB911EE392F8B099_ui64, 0x18BF525D915FEFF6_ui64, 0x5F1528B43AB810C2_ui64, 0xEC3B640A391F4FAD_ui64,
+			0x27E05A6E926952CC_ui64, 0x94CE16D091CE0DA3_ui64, 0xD3646C393A29F297_ui64, 0x604A2087398EADF8_ui64,
+			0x5C3099EA6DE60CFF_ui64, 0xEF1ED5546E415390_ui64, 0xA8B4AFBDC5A6ACA4_ui64, 0x1B9AE303C601F3CB_ui64,
+			0x56ED3E2F9E224471_ui64, 0xE5C372919D851B1E_ui64, 0xA26908783662E42A_ui64, 0x114744C635C5BB45_ui64,
+			0x2D3DFDAB61AD1A42_ui64, 0x9E13B115620A452D_ui64, 0xD9B9CBFCC9EDBA19_ui64, 0x6A978742CA4AE576_ui64,
+			0xA14CB926613CF817_ui64, 0x1262F598629BA778_ui64, 0x55C88F71C97C584C_ui64, 0xE6E6C3CFCADB0723_ui64,
+			0xDA9C7AA29EB3A624_ui64, 0x69B2361C9D14F94B_ui64, 0x2E184CF536F3067F_ui64, 0x9D36004B35545910_ui64,
+			0x2B769F17CF112238_ui64, 0x9858D3A9CCB67D57_ui64, 0xDFF2A94067518263_ui64, 0x6CDCE5FE64F6DD0C_ui64,
+			0x50A65C93309E7C0B_ui64, 0xE388102D33392364_ui64, 0xA4226AC498DEDC50_ui64, 0x170C267A9B79833F_ui64,
+			0xDCD7181E300F9E5E_ui64, 0x6FF954A033A8C131_ui64, 0x28532E49984F3E05_ui64, 0x9B7D62F79BE8616A_ui64,
+			0xA707DB9ACF80C06D_ui64, 0x14299724CC279F02_ui64, 0x5383EDCD67C06036_ui64, 0xE0ADA17364673F59_ui64,
+		};
+
+		static inline uint64_t soft_u8(const uint64_t p_context, const uint8_t p_new)
+		{
+			if constexpr(std::endian::native == std::endian::little)
+			{
+				return CRC64_table[static_cast<uint8_t>(p_context) ^ p_new] ^ (p_context >> 8);
+			}
+		}
+
+		static inline uint64_t soft_u64(uint64_t p_context, const uint64_t p_new)
+		{
+			if constexpr(std::endian::native == std::endian::little)
+			{
+				p_context ^= p_new;
+				p_context = CRC64_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
+				p_context = CRC64_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
+				p_context = CRC64_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
+				p_context = CRC64_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
+				p_context = CRC64_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
+				p_context = CRC64_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
+				p_context = CRC64_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
+				return CRC64_table[static_cast<uint8_t>(p_context)] ^ (p_context >> 8);
+			}
+		}
+	};
+
+} //namespace
+
+uint64_t CRC_64::trasform(uint64_t p_current, const std::span<const uint8_t> p_data)
+{
+	const uintptr_t			size  = p_data.size();
+	const uint8_t*			pivot = p_data.data();
+	const uint8_t* const	last  = pivot + size;
+
+	{
+		const uintptr_t off_align = align_t_mod<uint64_t>(pivot);
+		if((alignof(uint64_t) - off_align) > size)
+		{
+			for(const uint8_t tpoint : p_data)
+			{
+				p_current = CRC64_Help::soft_u8(p_current, tpoint);
+			}
+			return p_current;
+		}
+
+		switch(off_align)
+		{
+		case 1:
+			p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+			[[fallthrough]];
+		case 2:
+			p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+			[[fallthrough]];
+		case 3:
+			p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+			[[fallthrough]];
+		case 4:
+			p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+			[[fallthrough]];
+		case 5:
+			p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+			[[fallthrough]];
+		case 6:
+			p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+			[[fallthrough]];
+		case 7:
+			p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+			[[fallthrough]];
+		default:
+		case 0:
+			break;
+		}
+	}
+
+	for(; (last - pivot) >= 8; pivot += 8)
+	{
+		p_current = CRC64_Help::soft_u64(p_current, *reinterpret_cast<const uint32_t*>(pivot));
+	}
+
+	switch(last - pivot)
+	{
+	case 7:
+		p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+		[[fallthrough]];
+	case 6:
+		p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+		[[fallthrough]];
+	case 5:
+		p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+		[[fallthrough]];
+	case 4:
+		p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+		[[fallthrough]];
+	case 3:
+		p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+		[[fallthrough]];
+	case 2:
+		p_current = CRC64_Help::soft_u8(p_current, *pivot++);
+		[[fallthrough]];
+	case 1:
+		p_current = CRC64_Help::soft_u8(p_current, *pivot);
+		[[fallthrough]];
+	default:
+	case 0:
+		break;
+	}
+
+	return p_current;
+}
+
+uint64_t CRC_64::trasform(uint64_t p_current, const std::span<const uint64_t> p_data)
+{
+	for(const uint64_t tpoint : p_data)
+	{
+		p_current = CRC64_Help::soft_u64(p_current, tpoint);
+	}
+	return p_current;
+}
+
 
 } //namespace crypt
