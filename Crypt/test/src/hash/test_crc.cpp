@@ -46,7 +46,7 @@ using core::literals::operator "" _ui64;
 
 TEST(Hash, CRC_32C)
 {
-	testUtils::fileHashList testList = testUtils::getFileHashList("../test_vectors/tests.scef", U"CRC_32C", 4);
+	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"CRC_32C", 4);
 	ASSERT_FALSE(testList.empty());
 
 	crypt::CRC_32C engine;
@@ -54,9 +54,9 @@ TEST(Hash, CRC_32C)
 	ASSERT_EQ(engine.digest(), 0x0_ui32);
 
 	uintptr_t case_count = 0;
-	for(const testUtils::HashPair& testcase : testList)
+	for(const testUtils::Hashable& testcase : testList)
 	{
-		const std::vector<uint8_t> test_data = testUtils::getFileData(testcase.file);
+		const std::vector<uint8_t> test_data = testUtils::getData(testcase);
 		const uintptr_t data_size = test_data.size();
 		std::vector<uint8_t> aligned_data;
 		aligned_data.resize(data_size + 8);
@@ -70,43 +70,32 @@ TEST(Hash, CRC_32C)
 
 			engine.update(std::span<const uint8_t>{aligned_data.data() + i, data_size});
 
-
-			const uintptr_t alignment = (alignMod + i) & (0x07);
-			const uint32_t digest = core::endian_host2big(engine.digest());
-
-
-			const bool result = (memcmp(&digest, testcase.hash.data(), 4) == 0);
+			const uintptr_t	alignment	= (alignMod + i) & (0x07);
+			const uint32_t	digest		= core::endian_host2big(engine.digest());
+			const bool		result		= (memcmp(&digest, testcase.hash.data(), 4) == 0);
 
 			ASSERT_TRUE(result)
-				<<   "Expected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), 4}}
-				<< "\nActual:   " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), 4}}
-				<< "\nCase " << case_count << " alignment " << alignment;
+				<< "Case " << case_count << " alignment " << alignment
+				<< "\n  Actual: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), 4}}
+				<< "\nExpected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), 4}};
 		}
 		++case_count;
 	}
-
 }
 
 TEST(Hash, CRC_64)
 {
-	testUtils::fileHashList testList = testUtils::getFileHashList("../test_vectors/tests.scef", U"CRC_64", 8);
+	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"CRC_64", 8);
 	ASSERT_FALSE(testList.empty());
 
 	crypt::CRC_64 engine;
 
 	ASSERT_EQ(engine.digest(), 0x0_ui64);
 
-	uint8_t test = 'A';
-	engine.update(std::span<const uint8_t>{&test, 1});
-
-	uint64_t res = engine.digest();
-
-	ASSERT_EQ(res, 0x98F5E3FE438617BC) << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&res), 8}};
-
 	uintptr_t case_count = 0;
-	for(const testUtils::HashPair& testcase : testList)
+	for(const testUtils::Hashable& testcase : testList)
 	{
-		const std::vector<uint8_t> test_data = testUtils::getFileData(testcase.file);
+		const std::vector<uint8_t> test_data = testUtils::getData(testcase);
 		const uintptr_t data_size = test_data.size();
 		std::vector<uint8_t> aligned_data;
 		aligned_data.resize(data_size + 8);
@@ -120,20 +109,16 @@ TEST(Hash, CRC_64)
 
 			engine.update(std::span<const uint8_t>{aligned_data.data() + i, data_size});
 
-
-			const uintptr_t alignment = (alignMod + i) & (0x07);
-			const uint64_t digest = core::endian_host2big(engine.digest());
-
-
-			const bool result = (memcmp(&digest, testcase.hash.data(), 8) == 0);
+			const uintptr_t	alignment	= (alignMod + i) & (0x07);
+			const uint64_t	digest		= core::endian_host2big(engine.digest());
+			const bool		result		= (memcmp(&digest, testcase.hash.data(), 8) == 0);
 
 			ASSERT_TRUE(result)
-				<<   "Expected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), 8}}
-				<< "\nActual:   " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), 8}}
-			<< "\nCase " << case_count << " alignment " << alignment;
+				<< "Case " << case_count << " alignment " << alignment
+				<< "\n  Actual: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), 8}}
+				<< "\nExpected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), 8}};
 		}
 		++case_count;
 	}
-
 }
 

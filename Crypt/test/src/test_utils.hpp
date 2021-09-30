@@ -48,16 +48,18 @@ private:
 namespace testUtils
 {
 
-	struct HashPair
+	struct Hashable
 	{
-		std::filesystem::path file;
 		std::vector<uint8_t> hash;
+		std::vector<uint8_t> data;
+		std::filesystem::path file;
+		bool is_file = false;
 	};
 
 
-	using fileHashList = std::vector<HashPair>;
+	using HashList = std::vector<Hashable>;
 
-	fileHashList getFileHashList(const std::filesystem::path& p_configPath, std::u32string_view p_hashName, uint32_t p_hashSize);
+	HashList getHashList(const std::filesystem::path& p_configPath, std::u32string_view p_hashName, uint32_t p_hashSize);
 
-	std::vector<uint8_t> getFileData(const std::filesystem::path& p_file);
+	std::vector<uint8_t> getData(const Hashable& p_hashable);
 } //namespace TestUntilities

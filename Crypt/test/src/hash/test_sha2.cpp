@@ -93,7 +93,7 @@ private:
 TEST(Hash, SHA2_256)
 {
 
-	testUtils::fileHashList testList = testUtils::getFileHashList("../test_vectors/tests.scef", U"SHA2_256", 32);
+	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"SHA2_256", 32);
 	ASSERT_FALSE(testList.empty());
 
 

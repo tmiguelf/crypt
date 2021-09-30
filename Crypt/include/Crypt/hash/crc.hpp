@@ -34,44 +34,52 @@ namespace crypt
 class CRC_32C
 {
 public:
+	using digest_t = uint32_t;
+	static constexpr digest_t poly = 0x1EDC6F41;
+	static constexpr bool reciprocal = true;
 
-	static inline constexpr uint32_t default_init() { return 0xFFFFFFFF; };
-	static uint32_t trasform(uint32_t p_current, std::span<const uint8_t> p_data);
-	static uint32_t trasform(uint32_t p_current, std::span<const uint64_t> p_data);
+public:
+	static inline constexpr digest_t default_init() { return 0xFFFFFFFF; };
+	static digest_t trasform(digest_t p_current, std::span<const uint8_t> p_data);
+	static digest_t trasform(digest_t p_current, std::span<const uint64_t> p_data);
 
 public:
 	inline void reset() { m_context = default_init(); }
-	inline void set(uint32_t p_digest) { m_context = p_digest; }
+	inline void set(digest_t p_digest) { m_context = p_digest; }
 
-	inline uint32_t digest() const { return m_context ^ 0xFFFFFFFF; }
+	inline constexpr digest_t digest() const { return m_context ^ 0xFFFFFFFF; }
 
 	inline void update(std::span<const uint8_t > p_data) { m_context = trasform(m_context, p_data); }
 	inline void update(std::span<const uint64_t> p_data) { m_context = trasform(m_context, p_data); }
 
 private:
-	uint32_t m_context = default_init();
+	digest_t m_context = default_init();
 };
 
 
 class CRC_64
 {
 public:
+	using digest_t = uint64_t;
+	static constexpr digest_t poly = 0x42F0E1EBA9EA3693;
+	static constexpr bool reciprocal = false;
 
-	static inline constexpr uint64_t default_init() { return 0x0000000000000000; };
-	static uint64_t trasform(uint64_t p_current, std::span<const uint8_t> p_data);
-	static uint64_t trasform(uint64_t p_current, std::span<const uint64_t> p_data);
+public:
+	static inline constexpr digest_t default_init() { return 0x0000000000000000; };
+	static digest_t trasform(digest_t p_current, std::span<const uint8_t> p_data);
+	static digest_t trasform(digest_t p_current, std::span<const uint64_t> p_data);
 
 public:
 	inline void reset() { m_context = default_init(); }
-	inline void set(uint64_t p_digest) { m_context = p_digest; }
+	inline void set(digest_t p_digest) { m_context = p_digest; }
 
-	inline uint64_t digest() const { return m_context; }
+	inline constexpr digest_t digest() const { return m_context; }
 
 	inline void update(std::span<const uint8_t > p_data) { m_context = trasform(m_context, p_data); }
 	inline void update(std::span<const uint64_t> p_data) { m_context = trasform(m_context, p_data); }
 
 private:
-	uint64_t m_context = default_init();
+	digest_t m_context = default_init();
 };
 
 } //namespace crypt
