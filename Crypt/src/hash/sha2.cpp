@@ -25,6 +25,7 @@
 
 #include <Crypt/hash/sha2.hpp>
 
+#include <algorithm>
 #include <cstring>
 #include <bit>
 
@@ -45,6 +46,12 @@ namespace crypt
 	{
 		struct SHA2_256_Help
 		{
+			static constexpr uintptr_t block_size = 64;
+
+			using block_t = std::array<uint8_t, block_size>;
+
+			using M_block_t = std::array<uint32_t, 64>;
+
 			static constexpr std::array<uint32_t, 64> K =
 			{
 				0x428A2F98_ui32, 0x71374491_ui32, 0xB5C0FBCF_ui32, 0xE9B5DBA5_ui32,
@@ -118,24 +125,34 @@ namespace crypt
 				p_state[4] += T1;
 			}
 
-			static void block_digest(SHA2_256::digest_t& p_digest, const SHA2_256::block_t& p_block)
+			static inline void gen_16_64_M_block(M_block_t& p_prefilledBlock)
 			{
-				SHA2_256::digest_t localD = p_digest;
-				std::array<uint32_t, 64> block_M;
-				memcpy(block_M.data(), p_block.data(), sizeof(SHA2_256::block_t));
-
 				for(uintptr_t i = 16; i < 64; ++i)
 				{
-					block_M[i] =
-						sigma_l_1(block_M[i - 2])
-						+ block_M[i - 7]
-						+ sigma_l_0(block_M[i - 15])
-						+ block_M[i - 16];
+					p_prefilledBlock[i] =
+						sigma_l_1(p_prefilledBlock[i - 2])
+						+ p_prefilledBlock[i - 7]
+						+ sigma_l_0(p_prefilledBlock[i - 15])
+						+ p_prefilledBlock[i - 16];
 				}
+			}
+
+			static inline void transfer_to_M_block(const block_t& p_block, M_block_t& p_out)
+			{
+				memcpy(&p_out, &p_block, sizeof(M_block_t));
+				for(uintptr_t i = 0; i < 16; ++i)
+				{
+					p_out[i] = core::endian_big2host(p_out[i]);
+				}
+			}
+
+			static void M_block_digest(SHA2_256::digest_t& p_digest, const M_block_t& p_M)
+			{
+				SHA2_256::digest_t localD = p_digest;
 
 				for(uintptr_t i = 0; i < 64; ++i)
 				{
-					round(localD, K[i] + block_M[i]);
+					round(localD, K[i] + p_M[i]);
 				}
 
 				for(uintptr_t i = 0; i < 8; ++i)
@@ -143,44 +160,127 @@ namespace crypt
 					p_digest[i] += localD[i];
 				}
 			}
-		};
 
+			static void process_block(SHA2_256::digest_t& p_digest, const block_t& p_block)
+			{
+				std::array<uint32_t, 64> block_M;
+				transfer_to_M_block(p_block, block_M);
+				gen_16_64_M_block(block_M);
+				M_block_digest(p_digest, block_M);
+			}
+
+			static void process_blocks(SHA2_256::digest_t& p_digest, const std::span<const block_t> p_blocks)
+			{
+				for(const block_t& tblock : p_blocks)
+				{
+					process_block(p_digest, tblock);
+				}
+			}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		};
 	} //namespace
 
-	void SHA2_256::trasform(digest_t& p_digest, std::span<const block_t> p_data)
+
+	void SHA2_256::reset()
 	{
-		for(const block_t& tBlock : p_data)
+		m_context = default_init();
+		m_total_size = 0;
+		m_cached_size = 0;
+	}
+
+
+	void SHA2_256::update(std::span<const uint8_t> p_data)
+	{
+		uintptr_t size = p_data.size();
+		m_total_size += size;
+		
+		if(m_cached_size)
 		{
-			SHA2_256_Help::block_digest(p_digest, tBlock);
+			if(size + m_cached_size >= SHA2_256_Help::block_size)
+			{
+				uintptr_t remain = SHA2_256_Help::block_size - m_cached_size;
+				remain = std::min(remain, size);
+				memcpy(m_cached.data() + m_cached_size, p_data.data(), remain);
+				m_cached_size = 0;
+				//process block
+				SHA2_256_Help::process_block(m_context, m_cached);
+
+				if(size == remain) return;
+
+				p_data = p_data.subspan(remain);
+				size   = p_data.size();
+			}
+			else
+			{
+				memcpy(m_cached.data() + m_cached_size, p_data.data(), size);
+				m_cached_size += static_cast<uint8_t>(size);
+				return;
+			}
+		}
+
+		const uint8_t   remainder		= static_cast<uint8_t>(size & (SHA2_256_Help::block_size - 1)); // size % 64
+		const uintptr_t handled_bytes	= size - remainder;
+
+		if(handled_bytes)
+		{
+			const uintptr_t handled_blocks = handled_bytes >> 6; // size / 64
+			SHA2_256_Help::process_blocks(
+				m_context,
+				std::span<const SHA2_256_Help::block_t>{reinterpret_cast<const SHA2_256_Help::block_t*>(p_data.data()), handled_blocks});
+			p_data = p_data.subspan(handled_bytes);
+		}
+
+		if(remainder)
+		{
+			memcpy(m_cached.data(), p_data.data(), remainder);
+			m_cached_size = remainder;
 		}
 	}
 
-	void SHA2_256::trasform_final(digest_t& p_digest, std::span<const uint8_t> p_data, uint64_t p_totalSize)
+
+	void SHA2_256::finalize()
 	{
-		//todo
+		const uint8_t cached_size = m_cached_size + 1;
+		m_cached[m_cached_size] = 0x80;
+		m_cached_size = 0;
 
+		const uint64_t total_size = m_total_size << 3; //m_total_size * 8
+		m_total_size = 0;
 
+		const uintptr_t remainder = SHA2_256_Help::block_size - cached_size;
 
+		SHA2_256_Help::M_block_t block_M{0};
+		memset(m_cached.data() + cached_size, 0, remainder);
+		if(remainder < 8)
+		{
+			memset(m_cached.data() + cached_size, 0, remainder);
+			SHA2_256_Help::process_block(m_context, m_cached);
+		}
+		else
+		{
+			memset(m_cached.data() + cached_size, 0, remainder - 8);
+			SHA2_256_Help::transfer_to_M_block(m_cached, block_M);
+		}
 
+		block_M[14] = static_cast<uint32_t>(total_size >> 32);
+		block_M[15] = static_cast<uint32_t>(total_size);
 
-
-
-		block_t block;
-
-
-
-		memset(block.data(), 0, sizeof(block_t));
-		block[0] = 0x80000000;
-
-		memcpy(block.data() + 14, reinterpret_cast<uint32_t*>(&p_totalSize) + 1, 4);
-		memcpy(block.data() + 15, reinterpret_cast<uint32_t*>(&p_totalSize), 4);
-
-		SHA2_256_Help::block_digest(p_digest, block);
-
+		SHA2_256_Help::gen_16_64_M_block(block_M);
+		SHA2_256_Help::M_block_digest(m_context, block_M);
 	}
 
-
-
-	//static void SHA2_256::trasform_final(digest_t& p_digest, std::span<const uint8_t> p_data, uint64_t p_totalSize);
 
 } //namespace crypt

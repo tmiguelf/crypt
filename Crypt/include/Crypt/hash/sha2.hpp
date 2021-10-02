@@ -35,8 +35,6 @@ namespace crypt
 class SHA2_256
 {
 public:
-	using block_t  = std::array<uint32_t, 16>;
-
 	using digest_t = std::array<uint32_t, 8>;
 
 public:
@@ -55,19 +53,24 @@ public:
 		};
 	};
 
-	static void trasform(digest_t& p_digest, std::span<const block_t> p_data);
-	static void trasform_final(digest_t& p_digest, std::span<const uint8_t> p_data, uint64_t p_totalSize);
 public:
 
-	inline void reset() { m_context = default_init(); }
+	void reset();
 	inline void set(digest_t p_digest) { m_context = p_digest; }
 
-	void update(std::span<const block_t> p_data);
-	void update_final(std::span<const uint8_t> p_data, uint64_t p_totalSize);
+
+	void update(std::span<const uint8_t> p_data);
+	void finalize();
+
+	inline const digest_t& digest() const { return m_context; }
 
 private:
-	alignas(8) digest_t m_context = default_init();
+	digest_t							m_context = default_init();
+	alignas(4) std::array<uint8_t, 64>	m_cached {0};
+	uint64_t							m_total_size = 0;
+	uint8_t								m_cached_size = 0;
 };
+
 
 class SHA2_512
 {

@@ -41,9 +41,6 @@
     <ClInclude Include="include\Crypt\hash\sha2.hpp">
       <Filter>Header Files\hash</Filter>
     </ClInclude>
-    <ClInclude Include="include\Crypt\aligned_array.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\hash\crc.cpp">

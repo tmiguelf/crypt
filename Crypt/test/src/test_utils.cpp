@@ -74,7 +74,7 @@ namespace testUtils
 		{
 			while((i < size) && value[i] == ' ')
 			{
-				break;
+				++i;
 			}
 
 			if(!(i < size))

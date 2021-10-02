@@ -60,7 +60,6 @@
     <None Include="Crypt.include.props" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Crypt\aligned_array.hpp" />
     <ClInclude Include="include\Crypt\hash\crc.hpp" />
     <ClInclude Include="include\Crypt\hash\sha2.hpp" />
     <ClInclude Include="include\Crypt\utils.hpp" />

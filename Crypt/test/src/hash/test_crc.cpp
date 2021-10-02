@@ -46,7 +46,9 @@ using core::literals::operator "" _ui64;
 
 TEST(Hash, CRC_32C)
 {
-	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"CRC_32C", 4);
+	using digest_t = crypt::CRC_32C::digest_t;
+
+	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"CRC_32C", sizeof(digest_t));
 	ASSERT_FALSE(testList.empty());
 
 	crypt::CRC_32C engine;
@@ -71,13 +73,13 @@ TEST(Hash, CRC_32C)
 			engine.update(std::span<const uint8_t>{aligned_data.data() + i, data_size});
 
 			const uintptr_t	alignment	= (alignMod + i) & (0x07);
-			const uint32_t	digest		= core::endian_host2big(engine.digest());
-			const bool		result		= (memcmp(&digest, testcase.hash.data(), 4) == 0);
+			const digest_t	digest		= core::endian_host2big(engine.digest());
+			const bool		result		= (memcmp(&digest, testcase.hash.data(), sizeof(digest_t)) == 0);
 
 			ASSERT_TRUE(result)
 				<< "Case " << case_count << " alignment " << alignment
-				<< "\n  Actual: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), 4}}
-				<< "\nExpected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), 4}};
+				<< "\n  Actual: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), sizeof(digest_t)}}
+				<< "\nExpected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), sizeof(digest_t)}};
 		}
 		++case_count;
 	}
@@ -85,7 +87,9 @@ TEST(Hash, CRC_32C)
 
 TEST(Hash, CRC_64)
 {
-	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"CRC_64", 8);
+	using digest_t = crypt::CRC_64::digest_t;
+
+	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"CRC_64", sizeof(digest_t));
 	ASSERT_FALSE(testList.empty());
 
 	crypt::CRC_64 engine;
@@ -110,13 +114,13 @@ TEST(Hash, CRC_64)
 			engine.update(std::span<const uint8_t>{aligned_data.data() + i, data_size});
 
 			const uintptr_t	alignment	= (alignMod + i) & (0x07);
-			const uint64_t	digest		= core::endian_host2big(engine.digest());
-			const bool		result		= (memcmp(&digest, testcase.hash.data(), 8) == 0);
+			const digest_t	digest		= core::endian_host2big(engine.digest());
+			const bool		result		= (memcmp(&digest, testcase.hash.data(), sizeof(digest_t)) == 0);
 
 			ASSERT_TRUE(result)
 				<< "Case " << case_count << " alignment " << alignment
-				<< "\n  Actual: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), 8}}
-				<< "\nExpected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), 8}};
+				<< "\n  Actual: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), sizeof(digest_t)}}
+				<< "\nExpected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), sizeof(digest_t)}};
 		}
 		++case_count;
 	}

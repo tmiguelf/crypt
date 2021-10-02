@@ -31,6 +31,7 @@
 #include <CoreLib/Core_Type.hpp>
 #include <CoreLib/toPrint/toPrint.hpp>
 #include <CoreLib/toPrint/toPrint_std_ostream.hpp>
+#include <CoreLib/Core_Endian.hpp>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -46,97 +47,43 @@ using core::literals::operator "" _ui32;
 using core::literals::operator "" _ui64;
 
 
-template<>
-class core::toPrint<crypt::SHA2_256::digest_t>: public core::toPrint_base
-{
-private:
-	static constexpr uintptr_t array_size = core::to_chars_hex_max_digits_v<uint32_t> * 8 + 7;
-
-public:
-	constexpr toPrint(const crypt::SHA2_256::digest_t&p_data): m_data{p_data} {}
-
-	template<_p::c_toPrint_char CharT>
-	static inline constexpr uintptr_t size(const CharT&) { return array_size; }
-
-	template<_p::c_toPrint_char CharT>
-	inline void getPrint(CharT* p_out) const
-	{
-		core::_p::to_chars_hex_fix_unsafe(m_data[0], p_out);
-		p_out += 8;
-		*(p_out++) = ' ';
-		core::_p::to_chars_hex_fix_unsafe(m_data[1], p_out);
-		p_out += 8;
-		*(p_out++) = ' ';
-		core::_p::to_chars_hex_fix_unsafe(m_data[2], p_out);
-		p_out += 8;
-		*(p_out++) = ' ';
-		core::_p::to_chars_hex_fix_unsafe(m_data[3], p_out);
-		p_out += 8;
-		*(p_out++) = ' ';
-		core::_p::to_chars_hex_fix_unsafe(m_data[4], p_out);
-		p_out += 8;
-		*(p_out++) = ' ';
-		core::_p::to_chars_hex_fix_unsafe(m_data[5], p_out);
-		p_out += 8;
-		*(p_out++) = ' ';
-		core::_p::to_chars_hex_fix_unsafe(m_data[6], p_out);
-		p_out += 8;
-		*(p_out++) = ' ';
-		core::_p::to_chars_hex_fix_unsafe(m_data[7], p_out);
-	}
-
-private:
-	const crypt::SHA2_256::digest_t& m_data;
-};
-
-
 TEST(Hash, SHA2_256)
 {
+	using digest_t = crypt::SHA2_256::digest_t;
 
-	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"SHA2_256", 32);
+	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"SHA2_256", sizeof(digest_t));
 	ASSERT_FALSE(testList.empty());
 
+	crypt::SHA2_256 engine;
 
-	std::array<uint32_t, 16> data =
-		{
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-			0x00000000_ui32,
-		};
+	uintptr_t case_count = 0;
+	for(const testUtils::Hashable& testcase : testList)
+	{
+		engine.reset();
+		const std::vector<uint8_t> test_data = testUtils::getData(testcase);
 
-	const crypt::SHA2_256::digest_t expected =
-		{
-			0xf5a5fd42_ui32,
-			0xd16a2030_ui32,
-			0x2798ef6e_ui32,
-			0xd309979b_ui32,
-			0x43003d23_ui32,
-			0x20d9f0e8_ui32,
-			0xea9831a9_ui32,
-			0x2759fb4b_ui32,
-		};
+		engine.update(test_data);
+		engine.finalize();
 
+		const digest_t digest = engine.digest();
+		digest_t order_digets;
+		order_digets[0] = core::endian_host2big(digest[0]);
+		order_digets[1] = core::endian_host2big(digest[1]);
+		order_digets[2] = core::endian_host2big(digest[2]);
+		order_digets[3] = core::endian_host2big(digest[3]);
+		order_digets[4] = core::endian_host2big(digest[4]);
+		order_digets[5] = core::endian_host2big(digest[5]);
+		order_digets[6] = core::endian_host2big(digest[6]);
+		order_digets[7] = core::endian_host2big(digest[7]);
 
-	crypt::SHA2_256::digest_t tdigest = crypt::SHA2_256::default_init();
+		const bool result = (memcmp(&order_digets, testcase.hash.data(), sizeof(digest_t)) == 0);
 
-	crypt::SHA2_256::trasform(tdigest, {&data, 1});
-	crypt::SHA2_256::trasform_final(tdigest, {}, 512);
+		ASSERT_TRUE(result)
+			<< "Case " << case_count
+			<< "\n  Actual: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), sizeof(digest_t)}}
+			<< "\nExpected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), sizeof(digest_t)}};
 
-
-	ASSERT_EQ(expected, tdigest) << core::toPrint{expected} << '\n' << core::toPrint{tdigest};
-
+		++case_count;
+	}
 
 }
