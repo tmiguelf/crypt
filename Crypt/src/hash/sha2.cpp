@@ -102,27 +102,122 @@ namespace crypt
 				return std::rotr(p_val, 17) ^ std::rotr(p_val, 19) ^ (p_val >> 10);
 			}
 
-			static void round(SHA2_256::digest_t& p_state, uint32_t const p_KW)
+			//Note: Keep for reference
+		//	static void round(SHA2_256::digest_t& p_state, uint32_t const p_KW)
+		//	{
+		//		const uint32_t T1 =
+		//			p_state[7]
+		//			+ Sigma_U_1(p_state[4])
+		//			+ Ch(p_state[4], p_state[5], p_state[6])
+		//			+ p_KW;
+		//
+		//		const uint32_t T2 =
+		//			Sigma_U_0(p_state[0]) + Maj(p_state[0], p_state[1], p_state[2]);
+		//
+		//		p_state[7] = p_state[6];
+		//		p_state[6] = p_state[5];
+		//		p_state[5] = p_state[4];
+		//		p_state[4] = p_state[3];
+		//		p_state[3] = p_state[2];
+		//		p_state[2] = p_state[1];
+		//		p_state[1] = p_state[0];
+		//
+		//		p_state[0] = T1 + T2;
+		//		p_state[4] += T1;
+		//	}
+
+			static void round4(SHA2_256::digest_t& p_state, const std::array<uint32_t, 4>& p_KW)
 			{
-				const uint32_t T1 =
+				const uint32_t T1_0 =
 					p_state[7]
 					+ Sigma_U_1(p_state[4])
 					+ Ch(p_state[4], p_state[5], p_state[6])
-					+ p_KW;
-
-				const uint32_t T2 =
+					+ p_KW[0];
+				
+				const uint32_t T2_0 =
 					Sigma_U_0(p_state[0]) + Maj(p_state[0], p_state[1], p_state[2]);
 
-				p_state[7] = p_state[6];
-				p_state[6] = p_state[5];
-				p_state[5] = p_state[4];
-				p_state[4] = p_state[3];
-				p_state[3] = p_state[2];
-				p_state[2] = p_state[1];
-				p_state[1] = p_state[0];
+				//{
+				//	p_state[7] = p_state[6];
+				//	p_state[6] = p_state[5];
+				//	p_state[5] = p_state[4];
+				//	p_state[4] = p_state[3] + T1_0;
+				//	p_state[3] = p_state[2];
+				//	p_state[2] = p_state[1];
+				//	p_state[1] = p_state[0];
+				//	p_state[0] = T1_0 + T2_0;
+				//}
 
-				p_state[0] = T1 + T2;
-				p_state[4] += T1;
+				const uint32_t s0_0 = T1_0 + T2_0;
+				const uint32_t s4_0 = p_state[3] + T1_0;
+
+
+				const uint32_t T1_1 =
+					p_state[6]
+					+ Sigma_U_1(s4_0)
+					+ Ch(s4_0, p_state[4], p_state[5])
+					+ p_KW[1];
+
+				const uint32_t T2_1 =
+					Sigma_U_0(s0_0) + Maj(s0_0, p_state[0], p_state[1]);
+
+				//{
+				//	p_state[7] = p_state[5];
+				//	p_state[6] = p_state[4];
+				//	p_state[5] = s4_0;
+				//	p_state[4] = p_state[2] + T1_1;
+				//	p_state[3] = p_state[1];
+				//	p_state[2] = p_state[0];
+				//	p_state[1] = s0_0;
+				//	p_state[0] = T1_1 + T2_1;
+				//}
+
+				const uint32_t s0_1 = T1_1 + T2_1;
+				const uint32_t s4_1 = p_state[2] + T1_1;
+
+
+
+				const uint32_t T1_2 =
+					p_state[5]
+					+ Sigma_U_1(s4_1)
+					+ Ch(s4_1, s4_0, p_state[4])
+					+ p_KW[2];
+
+				const uint32_t T2_2 =
+					Sigma_U_0(s0_1) + Maj(s0_1, s0_0, p_state[0]);
+
+				//{
+				//	p_state[7] = p_state[4];
+				//	p_state[6] = s4_0;
+				//	p_state[5] = s4_1;
+				//	p_state[4] = p_state[1] + T1_2;
+				//	p_state[3] = p_state[0];
+				//	p_state[2] = s0_0;
+				//	p_state[1] = s0_1;
+				//	p_state[0] = T1_2 + T2_2;
+				//}
+
+				const uint32_t s0_2 = T1_2 + T2_2;
+				const uint32_t s4_2 = p_state[1] + T1_2;
+
+
+				const uint32_t T1_3 =
+					p_state[4]
+					+ Sigma_U_1(s4_2)
+					+ Ch(s4_2, s4_1, s4_0)
+					+ p_KW[3];
+
+				const uint32_t T2_3 =
+					Sigma_U_0(s0_2) + Maj(s0_2, s0_1, s0_0);
+
+				p_state[7] = s4_0;
+				p_state[6] = s4_1;
+				p_state[5] = s4_2;
+				p_state[4] = p_state[0] + T1_3;
+				p_state[3] = s0_0;
+				p_state[2] = s0_1;
+				p_state[1] = s0_2;
+				p_state[0] = T1_3 + T2_3;
 			}
 
 			static inline void gen_16_64_M_block(M_block_t& p_prefilledBlock)
@@ -140,9 +235,13 @@ namespace crypt
 			static inline void transfer_to_M_block(const block_t& p_block, M_block_t& p_out)
 			{
 				memcpy(&p_out, &p_block, sizeof(M_block_t));
-				for(uintptr_t i = 0; i < 16; ++i)
+
+				if constexpr (std::endian::native == std::endian::little)
 				{
-					p_out[i] = core::endian_big2host(p_out[i]);
+					for(uintptr_t i = 0; i < 16; ++i)
+					{
+						p_out[i] = core::endian_big2host(p_out[i]);
+					}
 				}
 			}
 
@@ -150,9 +249,15 @@ namespace crypt
 			{
 				SHA2_256::digest_t localD = p_digest;
 
-				for(uintptr_t i = 0; i < 64; ++i)
+				//Note: Keep for reference
+			//	for(uintptr_t i = 0; i < 64; ++i)
+			//	{
+			//		round(localD, K[i] + p_M[i]);
+			//	}
+
+				for(uintptr_t i = 0; i < 64; i += 4)
 				{
-					round(localD, K[i] + p_M[i]);
+					round4(localD, {K[i] + p_M[i], K[i+1] + p_M[i+1], K[i+2] + p_M[i+2], K[i+3] + p_M[i+3]});
 				}
 
 				for(uintptr_t i = 0; i < 8; ++i)
@@ -176,19 +281,6 @@ namespace crypt
 					process_block(p_digest, tblock);
 				}
 			}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 		};
 	} //namespace
