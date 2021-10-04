@@ -87,3 +87,44 @@ TEST(Hash, SHA2_256)
 	}
 
 }
+
+TEST(Hash, SHA2_512)
+{
+	using digest_t = crypt::SHA2_512::digest_t;
+
+	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"SHA2_512", sizeof(digest_t));
+	ASSERT_FALSE(testList.empty());
+
+	crypt::SHA2_512 engine;
+
+	uintptr_t case_count = 0;
+	for(const testUtils::Hashable& testcase : testList)
+	{
+		engine.reset();
+		const std::vector<uint8_t> test_data = testUtils::getData(testcase);
+
+		engine.update(test_data);
+		engine.finalize();
+
+		const digest_t digest = engine.digest();
+		digest_t order_digets;
+		order_digets[0] = core::endian_host2big(digest[0]);
+		order_digets[1] = core::endian_host2big(digest[1]);
+		order_digets[2] = core::endian_host2big(digest[2]);
+		order_digets[3] = core::endian_host2big(digest[3]);
+		order_digets[4] = core::endian_host2big(digest[4]);
+		order_digets[5] = core::endian_host2big(digest[5]);
+		order_digets[6] = core::endian_host2big(digest[6]);
+		order_digets[7] = core::endian_host2big(digest[7]);
+
+		const bool result = (memcmp(&order_digets, testcase.hash.data(), sizeof(digest_t)) == 0);
+
+		ASSERT_TRUE(result)
+			<< "Case " << case_count
+			<< "\n  Actual: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), sizeof(digest_t)}}
+		<< "\nExpected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), sizeof(digest_t)}};
+
+		++case_count;
+	}
+
+}
