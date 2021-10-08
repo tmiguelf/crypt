@@ -194,13 +194,13 @@ namespace
 				switch(off_align)
 				{
 				case 1:
-					p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+					p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 					[[fallthrough]];
 				case 2:
-					p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+					p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 					[[fallthrough]];
 				case 3:
-					p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+					p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 					break;
 				default:
 				case 0:
@@ -216,10 +216,10 @@ namespace
 			switch(last - pivot)
 			{
 			case 3:
-				p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+				p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 				[[fallthrough]];
 			case 2:
-				p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+				p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 				[[fallthrough]];
 			case 1:
 				p_current = CRC_Helper::soft_byte(p_current, *pivot);
@@ -266,7 +266,7 @@ namespace
 				switch(off_align)
 				{
 				case 1:
-					p_current = _mm_crc32_u8(p_current, *pivot++);
+					p_current = _mm_crc32_u8(p_current, *(pivot++));
 					[[fallthrough]];
 				case 2:
 					p_current = _mm_crc32_u16(p_current, *reinterpret_cast<const uint16_t*>(pivot));
@@ -277,19 +277,19 @@ namespace
 					pivot += 4;
 					break;
 				case 3:
-					p_current = _mm_crc32_u8(p_current, *pivot++);
+					p_current = _mm_crc32_u8(p_current, *(pivot++));
 					p_current = _mm_crc32_u32(p_current, *reinterpret_cast<const uint32_t*>(pivot));
 					pivot += 4;
 					break;
 				case 5:
-					p_current = _mm_crc32_u8(p_current, *pivot++);
+					p_current = _mm_crc32_u8(p_current, *(pivot++));
 					[[fallthrough]];
 				case 6:
 					p_current = _mm_crc32_u16(p_current, *reinterpret_cast<const uint16_t*>(pivot));
 					pivot += 2;
 					break;
 				case 7:
-					p_current = _mm_crc32_u8(p_current, *pivot++);
+					p_current = _mm_crc32_u8(p_current, *(pivot++));
 					break;
 				default:
 				case 0:
@@ -309,7 +309,7 @@ namespace
 			switch(last - pivot)
 			{
 			case 7:
-				p_current = _mm_crc32_u8(p_current, *pivot++);
+				p_current = _mm_crc32_u8(p_current, *(pivot++));
 				[[fallthrough]];
 			case 6:
 				p_current = _mm_crc32_u16(p_current, *reinterpret_cast<const uint16_t*>(pivot));
@@ -319,11 +319,11 @@ namespace
 				p_current = _mm_crc32_u32(p_current, *reinterpret_cast<const uint32_t*>(pivot));
 				break;
 			case 5:
-				p_current = _mm_crc32_u8(p_current, *pivot++);
+				p_current = _mm_crc32_u8(p_current, *(pivot++));
 				p_current = _mm_crc32_u32(p_current, *reinterpret_cast<const uint32_t*>(pivot));
 				break;
 			case 3:
-				p_current = _mm_crc32_u8(p_current, *pivot++);
+				p_current = _mm_crc32_u8(p_current, *(pivot++));
 				[[fallthrough]];
 			case 2:
 				p_current = _mm_crc32_u16(p_current, *reinterpret_cast<const uint16_t*>(pivot));
@@ -410,25 +410,25 @@ CRC_64::digest_t CRC_64::trasform(digest_t p_current, const std::span<const uint
 		switch(off_align)
 		{
 		case 1:
-			p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+			p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 			[[fallthrough]];
 		case 2:
-			p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+			p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 			[[fallthrough]];
 		case 3:
-			p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+			p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 			[[fallthrough]];
 		case 4:
-			p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+			p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 			[[fallthrough]];
 		case 5:
-			p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+			p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 			[[fallthrough]];
 		case 6:
-			p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+			p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 			[[fallthrough]];
 		case 7:
-			p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+			p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 			[[fallthrough]];
 		default:
 		case 0:
@@ -444,22 +444,22 @@ CRC_64::digest_t CRC_64::trasform(digest_t p_current, const std::span<const uint
 	switch(last - pivot)
 	{
 	case 7:
-		p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+		p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 		[[fallthrough]];
 	case 6:
-		p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+		p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 		[[fallthrough]];
 	case 5:
-		p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+		p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 		[[fallthrough]];
 	case 4:
-		p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+		p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 		[[fallthrough]];
 	case 3:
-		p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+		p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 		[[fallthrough]];
 	case 2:
-		p_current = CRC_Helper::soft_byte(p_current, *pivot++);
+		p_current = CRC_Helper::soft_byte(p_current, *(pivot++));
 		[[fallthrough]];
 	case 1:
 		p_current = CRC_Helper::soft_byte(p_current, *pivot);
