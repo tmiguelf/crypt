@@ -22,6 +22,18 @@
     <Filter Include="Header Files\hash">
       <UniqueIdentifier>{4aea4ff1-780c-45dd-b6bc-df1ae6792897}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\codec">
+      <UniqueIdentifier>{0da38a3d-5808-482f-97b5-211265d46ced}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\codec\symetric">
+      <UniqueIdentifier>{c97ccc70-3bd1-4d8e-a7a3-1870773b805d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\codec">
+      <UniqueIdentifier>{5a0384bc-2f55-422e-ae55-07a1944c64c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\codec\symetric">
+      <UniqueIdentifier>{676fdaea-fdd3-403b-a652-4d17cad43746}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Crypt.include.props">
@@ -41,6 +53,9 @@
     <ClInclude Include="include\Crypt\hash\sha2.hpp">
       <Filter>Header Files\hash</Filter>
     </ClInclude>
+    <ClInclude Include="include\Crypt\codec\symetric\AES.hpp">
+      <Filter>Header Files\codec\symetric</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\hash\crc.cpp">
@@ -48,6 +63,9 @@
     </ClCompile>
     <ClCompile Include="src\hash\sha2.cpp">
       <Filter>Source Files\hash</Filter>
+    </ClCompile>
+    <ClCompile Include="src\codec\symetric\AES.cpp">
+      <Filter>Source Files\codec\symetric</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

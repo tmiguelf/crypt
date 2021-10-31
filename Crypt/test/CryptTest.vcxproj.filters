@@ -16,6 +16,12 @@
     <Filter Include="Source Files\hash">
       <UniqueIdentifier>{8c553da0-36fe-4e37-81c7-2c89de654f5e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\codec">
+      <UniqueIdentifier>{3dd816e6-4026-4253-8535-94ee17c5f138}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\codec\symetric">
+      <UniqueIdentifier>{f4863230-bc3a-4913-9f65-bed5774e8ea4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\hash\test_crc.cpp">
@@ -26,6 +32,9 @@
     </ClCompile>
     <ClCompile Include="src\test_utils.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\codec\symetric\test_AES.cpp">
+      <Filter>Source Files\codec\symetric</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
