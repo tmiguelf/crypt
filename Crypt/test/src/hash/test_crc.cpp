@@ -46,24 +46,30 @@ using core::literals::operator "" _ui64;
 
 TEST(Hash, CRC_32C)
 {
-	using digest_t = crypt::CRC_32C::digest_t;
+	using digest_t = Crypt::CRC_32C::digest_t;
 
 	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"CRC_32C", sizeof(digest_t));
 	ASSERT_FALSE(testList.empty());
 
-	crypt::CRC_32C engine;
+	Crypt::CRC_32C engine;
 
 	ASSERT_EQ(engine.digest(), 0x0_ui32);
 
 	uintptr_t case_count = 0;
 	for(const testUtils::Hashable& testcase : testList)
 	{
-		const std::vector<uint8_t> test_data = testUtils::getData(testcase);
+		std::optional<std::vector<uint8_t>> tdata = testcase.source.getData();
+		EXPECT_TRUE(tdata.has_value());
+		if(!tdata.has_value())
+		{
+			continue;
+		}
+		const std::vector<uint8_t> test_data = std::move(tdata.value());
 		const uintptr_t data_size = test_data.size();
 		std::vector<uint8_t> aligned_data;
 		aligned_data.resize(data_size + 8);
 
-		const uintptr_t alignMod = crypt::align_mod<8>(aligned_data.data());
+		const uintptr_t alignMod = Crypt::align_mod<8>(aligned_data.data());
 
 		for(uint8_t i = 0; i < 8; ++i)
 		{
@@ -87,24 +93,31 @@ TEST(Hash, CRC_32C)
 
 TEST(Hash, CRC_64)
 {
-	using digest_t = crypt::CRC_64::digest_t;
+	using digest_t = Crypt::CRC_64::digest_t;
 
 	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"CRC_64", sizeof(digest_t));
 	ASSERT_FALSE(testList.empty());
 
-	crypt::CRC_64 engine;
+	Crypt::CRC_64 engine;
 
 	ASSERT_EQ(engine.digest(), 0x0_ui64);
 
 	uintptr_t case_count = 0;
 	for(const testUtils::Hashable& testcase : testList)
 	{
-		const std::vector<uint8_t> test_data = testUtils::getData(testcase);
+		std::optional<std::vector<uint8_t>> tdata = testcase.source.getData();
+		EXPECT_TRUE(tdata.has_value());
+		if(!tdata.has_value())
+		{
+			continue;
+		}
+		const std::vector<uint8_t> test_data = std::move(tdata.value());
+
 		const uintptr_t data_size = test_data.size();
 		std::vector<uint8_t> aligned_data;
 		aligned_data.resize(data_size + 8);
 
-		const uintptr_t alignMod = crypt::align_mod<8>(aligned_data.data());
+		const uintptr_t alignMod = Crypt::align_mod<8>(aligned_data.data());
 
 		for(uint8_t i = 0; i < 8; ++i)
 		{

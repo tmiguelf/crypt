@@ -49,9 +49,9 @@
     <Import Project="$(quickMSBuildPath)default.cpp.props" />
     <Import Project="$(googletestPath)googletest.import.props" />
     <Import Project="$(googlemockPath)googlemock.import.props" />
-    <Import Project="$(CoreLibPath)CoreLib.import.props" />
     <Import Project="$(SCEFPath)SCEF.import.props" />
     <Import Project="$(ProjectDir)../Crypt.import.props" />
+    <Import Project="$(CoreLibPath)CoreLib.import.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>
@@ -63,6 +63,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\codec\symmetric\test_AES.cpp" />
     <ClCompile Include="src\hash\test_crc.cpp" />
     <ClCompile Include="src\hash\test_sha2.cpp" />
     <ClCompile Include="src\test_utils.cpp" />

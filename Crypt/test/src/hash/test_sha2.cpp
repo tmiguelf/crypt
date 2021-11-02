@@ -49,20 +49,27 @@ using core::literals::operator "" _ui64;
 
 TEST(Hash, SHA2_256)
 {
-	using digest_t = crypt::SHA2_256::digest_t;
+	using digest_t = Crypt::SHA2_256::digest_t;
 
 	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"SHA2_256", sizeof(digest_t));
 	ASSERT_FALSE(testList.empty());
 
-	crypt::SHA2_256 engine;
+	Crypt::SHA2_256 engine;
 
 	uintptr_t case_count = 0;
 	for(const testUtils::Hashable& testcase : testList)
 	{
 		engine.reset();
-		const std::vector<uint8_t> test_data = testUtils::getData(testcase);
+		std::optional<std::vector<uint8_t>> test_data = testcase.source.getData();
 
-		engine.update(test_data);
+		EXPECT_TRUE(test_data.has_value());
+
+		if(!test_data.has_value())
+		{
+			continue;
+		}
+
+		engine.update(test_data.value());
 		engine.finalize();
 
 		const digest_t digest = engine.digest();
@@ -90,20 +97,27 @@ TEST(Hash, SHA2_256)
 
 TEST(Hash, SHA2_512)
 {
-	using digest_t = crypt::SHA2_512::digest_t;
+	using digest_t = Crypt::SHA2_512::digest_t;
 
 	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"SHA2_512", sizeof(digest_t));
 	ASSERT_FALSE(testList.empty());
 
-	crypt::SHA2_512 engine;
+	Crypt::SHA2_512 engine;
 
 	uintptr_t case_count = 0;
 	for(const testUtils::Hashable& testcase : testList)
 	{
 		engine.reset();
-		const std::vector<uint8_t> test_data = testUtils::getData(testcase);
+		std::optional<std::vector<uint8_t>> test_data = testcase.source.getData();
 
-		engine.update(test_data);
+		EXPECT_TRUE(test_data.has_value());
+
+		if(!test_data.has_value())
+		{
+			continue;
+		}
+
+		engine.update(test_data.value());
 		engine.finalize();
 
 		const digest_t digest = engine.digest();
