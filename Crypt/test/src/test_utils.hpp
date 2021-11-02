@@ -72,7 +72,7 @@ namespace testUtils
 		data_source_t			source;
 	};
 
-	struct SymetricEncodable
+	struct SymmetricEncodable
 	{
 		struct result_t
 		{
@@ -86,10 +86,10 @@ namespace testUtils
 
 
 	using HashList		= std::vector<Hashable>;
-	using EncodeList	= std::vector<SymetricEncodable>;
+	using EncodeList	= std::vector<SymmetricEncodable>;
 
 	HashList	getHashList				(const std::filesystem::path& p_configPath, std::u32string_view p_hashName,  uint32_t p_hashSize);
-	EncodeList	getSymetricEncodeList	(const std::filesystem::path& p_configPath, std::u32string_view p_codecName, uint32_t p_keySize);
+	EncodeList	getSymmetricEncodeList	(const std::filesystem::path& p_configPath, std::u32string_view p_codecName, uint32_t p_keySize);
 
 
 

@@ -36,19 +36,19 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <Crypt/codec/symetric/AES.hpp>
+#include <Crypt/codec/symmetric/AES.hpp>
 
 #include <test_utils.hpp>
 
-TEST(codec_symetric, AES_128)
+TEST(codec_symmetric, AES_128)
 {
 	constexpr uintptr_t block_lenght	= crypt::AES_128::block_lenght;
 	constexpr uintptr_t key_lenght		= crypt::AES_128::key_lenght;
 
-	testUtils::EncodeList testList = testUtils::getSymetricEncodeList("../test_vectors/tests.scef", U"AES_128", key_lenght);
+	testUtils::EncodeList testList = testUtils::getSymmetricEncodeList("../test_vectors/tests.scef", U"AES_128", key_lenght);
 	ASSERT_FALSE(testList.empty());
 
-	for(const testUtils::SymetricEncodable& testcase : testList)
+	for(const testUtils::SymmetricEncodable& testcase : testList)
 	{
 
 		std::optional<std::vector<uint8_t>> tdata = testcase.source.getData();
@@ -67,7 +67,7 @@ TEST(codec_symetric, AES_128)
 			continue;
 		}
 
-		for(const testUtils::SymetricEncodable::result_t& tkeyCase : testcase.encoded)
+		for(const testUtils::SymmetricEncodable::result_t& tkeyCase : testcase.encoded)
 		{
 			EXPECT_EQ(tkeyCase.key.size(), key_lenght);
 			if(tkeyCase.key.size() != key_lenght)
@@ -124,15 +124,15 @@ TEST(codec_symetric, AES_128)
 	}
 }
 
-TEST(codec_symetric, AES_192)
+TEST(codec_symmetric, AES_192)
 {
 	constexpr uintptr_t block_lenght	= crypt::AES_192::block_lenght;
 	constexpr uintptr_t key_lenght		= crypt::AES_192::key_lenght;
 
-	testUtils::EncodeList testList = testUtils::getSymetricEncodeList("../test_vectors/tests.scef", U"AES_192", key_lenght);
+	testUtils::EncodeList testList = testUtils::getSymmetricEncodeList("../test_vectors/tests.scef", U"AES_192", key_lenght);
 	ASSERT_FALSE(testList.empty());
 
-	for(const testUtils::SymetricEncodable& testcase : testList)
+	for(const testUtils::SymmetricEncodable& testcase : testList)
 	{
 
 		std::optional<std::vector<uint8_t>> tdata = testcase.source.getData();
@@ -151,7 +151,7 @@ TEST(codec_symetric, AES_192)
 			continue;
 		}
 
-		for(const testUtils::SymetricEncodable::result_t& tkeyCase : testcase.encoded)
+		for(const testUtils::SymmetricEncodable::result_t& tkeyCase : testcase.encoded)
 		{
 			EXPECT_EQ(tkeyCase.key.size(), key_lenght);
 			if(tkeyCase.key.size() != key_lenght)
@@ -208,15 +208,15 @@ TEST(codec_symetric, AES_192)
 	}
 }
 
-TEST(codec_symetric, AES_256)
+TEST(codec_symmetric, AES_256)
 {
 	constexpr uintptr_t block_lenght	= crypt::AES_256::block_lenght;
 	constexpr uintptr_t key_lenght		= crypt::AES_256::key_lenght;
 
-	testUtils::EncodeList testList = testUtils::getSymetricEncodeList("../test_vectors/tests.scef", U"AES_256", key_lenght);
+	testUtils::EncodeList testList = testUtils::getSymmetricEncodeList("../test_vectors/tests.scef", U"AES_256", key_lenght);
 	ASSERT_FALSE(testList.empty());
 
-	for(const testUtils::SymetricEncodable& testcase : testList)
+	for(const testUtils::SymmetricEncodable& testcase : testList)
 	{
 
 		std::optional<std::vector<uint8_t>> tdata = testcase.source.getData();
@@ -235,7 +235,7 @@ TEST(codec_symetric, AES_256)
 			continue;
 		}
 
-		for(const testUtils::SymetricEncodable::result_t& tkeyCase : testcase.encoded)
+		for(const testUtils::SymmetricEncodable::result_t& tkeyCase : testcase.encoded)
 		{
 			EXPECT_EQ(tkeyCase.key.size(), key_lenght);
 			if(tkeyCase.key.size() != key_lenght)

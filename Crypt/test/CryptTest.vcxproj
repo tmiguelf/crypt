@@ -63,7 +63,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\codec\symetric\test_AES.cpp" />
+    <ClCompile Include="src\codec\symmetric\test_AES.cpp" />
     <ClCompile Include="src\hash\test_crc.cpp" />
     <ClCompile Include="src\hash\test_sha2.cpp" />
     <ClCompile Include="src\test_utils.cpp" />

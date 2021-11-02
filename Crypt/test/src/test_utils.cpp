@@ -256,9 +256,9 @@ namespace testUtils
 	}
 
 
-	std::vector<SymetricEncodable::result_t> getSymetricEncoding(const scef::group& p_config, const uint32_t p_keySize, const std::filesystem::path& p_basePath, const std::filesystem::path& p_filePath)
+	std::vector<SymmetricEncodable::result_t> getSymmetricEncoding(const scef::group& p_config, const uint32_t p_keySize, const std::filesystem::path& p_basePath, const std::filesystem::path& p_filePath)
 	{
-		std::vector<SymetricEncodable::result_t> output;
+		std::vector<SymmetricEncodable::result_t> output;
 		for(const scef::itemProxy<const scef::item>& titem : p_config.proxyList(scef::ItemType::group))
 		{
 			const scef::group& tcase = *static_cast<const scef::group*>(titem.get());
@@ -280,7 +280,7 @@ namespace testUtils
 				}
 			}
 
-			SymetricEncodable::result_t temp_result;
+			SymmetricEncodable::result_t temp_result;
 
 			temp_result.key = std::move(rkey.value());
 			std::optional<data_source_t> res_source = getDataSource(tcase, p_basePath, p_filePath);
@@ -377,7 +377,7 @@ namespace testUtils
 	}
 
 
-	EncodeList getSymetricEncodeList(const std::filesystem::path& p_configPath, std::u32string_view p_codecName, uint32_t p_keySize)
+	EncodeList getSymmetricEncodeList(const std::filesystem::path& p_configPath, std::u32string_view p_codecName, uint32_t p_keySize)
 	{
 		if(p_keySize > 70000)
 		{
@@ -433,7 +433,7 @@ namespace testUtils
 				continue;
 			}
 
-			SymetricEncodable data;
+			SymmetricEncodable data;
 
 			std::optional<data_source_t> res_source = getDataSource(tcase, basePath, filepath);
 			if(!res_source.has_value())
@@ -442,7 +442,7 @@ namespace testUtils
 			}
 			data.source = std::move(res_source.value());
 
-			data.encoded = getSymetricEncoding(*config_encoder, p_keySize, basePath, filepath);
+			data.encoded = getSymmetricEncoding(*config_encoder, p_keySize, basePath, filepath);
 
 			if(data.encoded.empty())
 			{

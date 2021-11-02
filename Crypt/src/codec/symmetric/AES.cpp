@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include <Crypt/codec/symetric/AES.hpp>
+#include <Crypt/codec/symmetric/AES.hpp>
 
 #include <bit>
 
