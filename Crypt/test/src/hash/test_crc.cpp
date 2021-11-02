@@ -46,12 +46,12 @@ using core::literals::operator "" _ui64;
 
 TEST(Hash, CRC_32C)
 {
-	using digest_t = crypt::CRC_32C::digest_t;
+	using digest_t = Crypt::CRC_32C::digest_t;
 
 	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"CRC_32C", sizeof(digest_t));
 	ASSERT_FALSE(testList.empty());
 
-	crypt::CRC_32C engine;
+	Crypt::CRC_32C engine;
 
 	ASSERT_EQ(engine.digest(), 0x0_ui32);
 
@@ -69,7 +69,7 @@ TEST(Hash, CRC_32C)
 		std::vector<uint8_t> aligned_data;
 		aligned_data.resize(data_size + 8);
 
-		const uintptr_t alignMod = crypt::align_mod<8>(aligned_data.data());
+		const uintptr_t alignMod = Crypt::align_mod<8>(aligned_data.data());
 
 		for(uint8_t i = 0; i < 8; ++i)
 		{
@@ -93,12 +93,12 @@ TEST(Hash, CRC_32C)
 
 TEST(Hash, CRC_64)
 {
-	using digest_t = crypt::CRC_64::digest_t;
+	using digest_t = Crypt::CRC_64::digest_t;
 
 	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"CRC_64", sizeof(digest_t));
 	ASSERT_FALSE(testList.empty());
 
-	crypt::CRC_64 engine;
+	Crypt::CRC_64 engine;
 
 	ASSERT_EQ(engine.digest(), 0x0_ui64);
 
@@ -117,7 +117,7 @@ TEST(Hash, CRC_64)
 		std::vector<uint8_t> aligned_data;
 		aligned_data.resize(data_size + 8);
 
-		const uintptr_t alignMod = crypt::align_mod<8>(aligned_data.data());
+		const uintptr_t alignMod = Crypt::align_mod<8>(aligned_data.data());
 
 		for(uint8_t i = 0; i < 8; ++i)
 		{

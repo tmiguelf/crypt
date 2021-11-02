@@ -29,7 +29,7 @@
 #include <array>
 #include <span>
 
-namespace crypt
+namespace Crypt
 {
 
 class SHA2_256
@@ -57,7 +57,6 @@ public:
 
 	void reset();
 	inline void set(digest_t p_digest) { m_context = p_digest; }
-
 
 	void update(std::span<const uint8_t> p_data);
 	void finalize();
@@ -97,12 +96,10 @@ public:
 	void reset();
 	inline void set(digest_t p_digest) { m_context = p_digest; }
 
-
 	void update(std::span<const uint8_t> p_data);
 	void finalize();
 
 	inline const digest_t& digest() const { return m_context; }
-
 
 private:
 	digest_t m_context = default_init();

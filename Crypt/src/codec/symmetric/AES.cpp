@@ -23,15 +23,14 @@
 ///		SOFTWARE.
 //======== ======== ======== ======== ======== ======== ======== ========
 
-#pragma once
-
 #include <Crypt/codec/symmetric/AES.hpp>
 
 #include <bit>
+#include <cstring>
 
 #include <CoreLib/Core_Type.hpp>
 
-namespace crypt
+namespace Crypt
 {
 	using core::literals::operator "" _ui8;
 	using core::literals::operator "" _ui64;
@@ -255,7 +254,7 @@ namespace crypt
 				v_4 ^ v_2 ^ v_1,
 			};
 
-			p_1 ^= (p_1 << 3) ^ tab[p_1 >> 5];
+			p_1 ^= static_cast<uint8_t>(static_cast<uint8_t>(p_1 << 3) ^ tab[p_1 >> 5]);
 		}
 
 		//algorithm extensively simplified

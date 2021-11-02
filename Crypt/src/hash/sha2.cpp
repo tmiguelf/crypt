@@ -32,7 +32,7 @@
 #include <CoreLib/Core_Type.hpp>
 #include <CoreLib/Core_Endian.hpp>
 
-namespace crypt
+namespace Crypt
 {
 	using core::literals::operator "" _ui32;
 	using core::literals::operator "" _ui64;
@@ -229,7 +229,7 @@ namespace crypt
 
 			static inline void transfer_to_M_block(const block_t& p_block, M_block_t& p_out)
 			{
-				memcpy(&p_out, &p_block, sizeof(M_block_t));
+				memcpy(&p_out, &p_block, sizeof(block_t));
 
 				if constexpr (std::endian::native == std::endian::little)
 				{
@@ -476,7 +476,7 @@ namespace crypt
 
 			static inline void transfer_to_M_block(const block_t& p_block, M_block_t& p_out)
 			{
-				memcpy(&p_out, &p_block, sizeof(M_block_t));
+				memcpy(&p_out, &p_block, sizeof(block_t));
 
 				if constexpr (std::endian::native == std::endian::little)
 				{

@@ -40,8 +40,9 @@
 #else
 #endif
 
-namespace crypt
+namespace Crypt
 {
+
 using core::literals::operator "" _ui32;
 using core::literals::operator "" _ui64;
 using core::literals::operator "" _uip;
