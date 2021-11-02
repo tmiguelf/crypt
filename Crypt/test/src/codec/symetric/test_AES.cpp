@@ -40,92 +40,254 @@
 
 #include <test_utils.hpp>
 
-
 TEST(codec_symetric, AES_128)
 {
+	constexpr uintptr_t block_lenght	= crypt::AES_128::block_lenght;
+	constexpr uintptr_t key_lenght		= crypt::AES_128::key_lenght;
 
-	const std::array<const uint8_t, 16> key =
+	testUtils::EncodeList testList = testUtils::getSymetricEncodeList("../test_vectors/tests.scef", U"AES_128", key_lenght);
+	ASSERT_FALSE(testList.empty());
+
+	for(const testUtils::SymetricEncodable& testcase : testList)
 	{
-		0x00,
-		0x01,
-		0x02,
-		0x03,
-		0x04,
-		0x05,
-		0x06,
-		0x07,
-		0x08,
-		0x09,
-		0x0a,
-		0x0b,
-		0x0c,
-		0x0d,
-		0x0e,
-		0x0f,
-	};
 
-	const std::array<const uint8_t, 16> data =
+		std::optional<std::vector<uint8_t>> tdata = testcase.source.getData();
+		EXPECT_TRUE(tdata.has_value());
+		if(!tdata.has_value())
+		{
+			continue;
+		}
+
+		const std::vector<uint8_t> testData = std::move(tdata.value());
+
+		EXPECT_EQ(testData.size(), block_lenght);
+
+		if(testData.size() != block_lenght)
+		{
+			continue;
+		}
+
+		for(const testUtils::SymetricEncodable::result_t& tkeyCase : testcase.encoded)
+		{
+			EXPECT_EQ(tkeyCase.key.size(), key_lenght);
+			if(tkeyCase.key.size() != key_lenght)
+			{
+				continue;
+			}
+
+			std::optional<std::vector<uint8_t>> texpected = tkeyCase.source.getData();
+
+			EXPECT_TRUE(texpected.has_value());
+			if(!texpected.has_value())
+			{
+				continue;
+			}
+
+			EXPECT_EQ(texpected.value().size(), block_lenght);
+			if(texpected.value().size() != block_lenght)
+			{
+				continue;
+			}
+
+			std::array<uint8_t, block_lenght> expected;
+			memcpy(expected.data(), texpected.value().data(), block_lenght);
+
+
+			crypt::AES_128::key_schedule_t tkey_schedule;
+			crypt::AES_128::make_key_schedule(std::span<const uint8_t, key_lenght>{tkeyCase.key.data(), key_lenght}, tkey_schedule);
+
+			std::array<uint8_t, block_lenght> encoded;
+			crypt::AES_128::encode(
+				tkey_schedule,
+				std::span<const uint8_t, block_lenght>{testData.data(), block_lenght},
+				encoded);
+
+			{
+				const bool result = (memcmp(encoded.data(), expected.data(), block_lenght) == 0);
+
+				ASSERT_TRUE(result)
+					<< "\n  Actual: " << testPrint{encoded}
+				<< "\nExpected: " << testPrint{expected};
+			}
+
+			std::array<uint8_t, block_lenght> decoded;
+
+			crypt::AES_128::decode(tkey_schedule, encoded, decoded);
+			{
+				const bool result2 = (memcmp(decoded.data(), testData.data(), sizeof(decoded)) == 0);
+
+				ASSERT_TRUE(result2)
+					<< "\n  Actual: " << testPrint{decoded}
+					<< "\nExpected: " << testPrint{testData};
+			}
+		}
+	}
+}
+
+TEST(codec_symetric, AES_192)
+{
+	constexpr uintptr_t block_lenght	= crypt::AES_192::block_lenght;
+	constexpr uintptr_t key_lenght		= crypt::AES_192::key_lenght;
+
+	testUtils::EncodeList testList = testUtils::getSymetricEncodeList("../test_vectors/tests.scef", U"AES_192", key_lenght);
+	ASSERT_FALSE(testList.empty());
+
+	for(const testUtils::SymetricEncodable& testcase : testList)
 	{
-		0x00,
-		0x11,
-		0x22,
-		0x33,
-		0x44,
-		0x55,
-		0x66,
-		0x77,
-		0x88,
-		0x99,
-		0xaa,
-		0xbb,
-		0xcc,
-		0xdd,
-		0xee,
-		0xff,
-	};
 
-	const std::array<const uint8_t, 16> expected =
+		std::optional<std::vector<uint8_t>> tdata = testcase.source.getData();
+		EXPECT_TRUE(tdata.has_value());
+		if(!tdata.has_value())
+		{
+			continue;
+		}
+
+		const std::vector<uint8_t> testData = std::move(tdata.value());
+
+		EXPECT_EQ(testData.size(), block_lenght);
+
+		if(testData.size() != block_lenght)
+		{
+			continue;
+		}
+
+		for(const testUtils::SymetricEncodable::result_t& tkeyCase : testcase.encoded)
+		{
+			EXPECT_EQ(tkeyCase.key.size(), key_lenght);
+			if(tkeyCase.key.size() != key_lenght)
+			{
+				continue;
+			}
+
+			std::optional<std::vector<uint8_t>> texpected = tkeyCase.source.getData();
+
+			EXPECT_TRUE(texpected.has_value());
+			if(!texpected.has_value())
+			{
+				continue;
+			}
+
+			EXPECT_EQ(texpected.value().size(), block_lenght);
+			if(texpected.value().size() != block_lenght)
+			{
+				continue;
+			}
+
+			std::array<uint8_t, block_lenght> expected;
+			memcpy(expected.data(), texpected.value().data(), block_lenght);
+
+
+			crypt::AES_192::key_schedule_t tkey_schedule;
+			crypt::AES_192::make_key_schedule(std::span<const uint8_t, key_lenght>{tkeyCase.key.data(), key_lenght}, tkey_schedule);
+
+			std::array<uint8_t, block_lenght> encoded;
+			crypt::AES_192::encode(
+				tkey_schedule,
+				std::span<const uint8_t, block_lenght>{testData.data(), block_lenght},
+				encoded);
+
+			{
+				const bool result = (memcmp(encoded.data(), expected.data(), block_lenght) == 0);
+
+				ASSERT_TRUE(result)
+					<< "\n  Actual: " << testPrint{encoded}
+					<< "\nExpected: " << testPrint{expected};
+			}
+
+			std::array<uint8_t, block_lenght> decoded;
+
+			crypt::AES_192::decode(tkey_schedule, encoded, decoded);
+			{
+				const bool result2 = (memcmp(decoded.data(), testData.data(), sizeof(decoded)) == 0);
+
+				ASSERT_TRUE(result2)
+					<< "\n  Actual: " << testPrint{decoded}
+					<< "\nExpected: " << testPrint{testData};
+			}
+		}
+	}
+}
+
+TEST(codec_symetric, AES_256)
+{
+	constexpr uintptr_t block_lenght	= crypt::AES_256::block_lenght;
+	constexpr uintptr_t key_lenght		= crypt::AES_256::key_lenght;
+
+	testUtils::EncodeList testList = testUtils::getSymetricEncodeList("../test_vectors/tests.scef", U"AES_256", key_lenght);
+	ASSERT_FALSE(testList.empty());
+
+	for(const testUtils::SymetricEncodable& testcase : testList)
 	{
-		0x69,
-		0xc4,
-		0xe0,
-		0xd8,
-		0x6a,
-		0x7b,
-		0x04,
-		0x30,
-		0xd8,
-		0xcd,
-		0xb7,
-		0x80,
-		0x70,
-		0xb4,
-		0xc5,
-		0x5a,
-	};
 
-	std::array<uint8_t, 16> encoded;
-	crypt::AES_128::key_schedule_t w_key;
+		std::optional<std::vector<uint8_t>> tdata = testcase.source.getData();
+		EXPECT_TRUE(tdata.has_value());
+		if(!tdata.has_value())
+		{
+			continue;
+		}
 
-	crypt::AES_128::make_key_schedule(key, w_key);
-	crypt::AES_128::encode(w_key, data, encoded);
+		const std::vector<uint8_t> testData = std::move(tdata.value());
 
-	const bool result = (memcmp(encoded.data(), expected.data(), sizeof(encoded)) == 0);
+		EXPECT_EQ(testData.size(), block_lenght);
 
-	ASSERT_TRUE(result)
-		<< "\n  Actual: " << testPrint{encoded}
-		<< "\nExpected: " << testPrint{expected};
+		if(testData.size() != block_lenght)
+		{
+			continue;
+		}
+
+		for(const testUtils::SymetricEncodable::result_t& tkeyCase : testcase.encoded)
+		{
+			EXPECT_EQ(tkeyCase.key.size(), key_lenght);
+			if(tkeyCase.key.size() != key_lenght)
+			{
+				continue;
+			}
+
+			std::optional<std::vector<uint8_t>> texpected = tkeyCase.source.getData();
+
+			EXPECT_TRUE(texpected.has_value());
+			if(!texpected.has_value())
+			{
+				continue;
+			}
+
+			EXPECT_EQ(texpected.value().size(), block_lenght);
+			if(texpected.value().size() != block_lenght)
+			{
+				continue;
+			}
+
+			std::array<uint8_t, block_lenght> expected;
+			memcpy(expected.data(), texpected.value().data(), block_lenght);
 
 
-	std::array<uint8_t, 16> decoded;
+			crypt::AES_256::key_schedule_t tkey_schedule;
+			crypt::AES_256::make_key_schedule(std::span<const uint8_t, key_lenght>{tkeyCase.key.data(), key_lenght}, tkey_schedule);
 
-	crypt::AES_128::decode(w_key, encoded, decoded);
+			std::array<uint8_t, block_lenght> encoded;
+			crypt::AES_256::encode(
+				tkey_schedule,
+				std::span<const uint8_t, block_lenght>{testData.data(), block_lenght},
+				encoded);
 
+			{
+				const bool result = (memcmp(encoded.data(), expected.data(), block_lenght) == 0);
 
-	const bool result2 = (memcmp(decoded.data(), data.data(), sizeof(decoded)) == 0);
+				ASSERT_TRUE(result)
+					<< "\n  Actual: " << testPrint{encoded}
+				<< "\nExpected: " << testPrint{expected};
+			}
 
-	ASSERT_TRUE(result2)
-		<< "\n  Actual: " << testPrint{decoded}
-		<< "\nExpected: " << testPrint{data};
+			std::array<uint8_t, block_lenght> decoded;
 
+			crypt::AES_256::decode(tkey_schedule, encoded, decoded);
+			{
+				const bool result2 = (memcmp(decoded.data(), testData.data(), sizeof(decoded)) == 0);
+
+				ASSERT_TRUE(result2)
+					<< "\n  Actual: " << testPrint{decoded}
+				<< "\nExpected: " << testPrint{testData};
+			}
+		}
+	}
 }

@@ -60,9 +60,16 @@ TEST(Hash, SHA2_256)
 	for(const testUtils::Hashable& testcase : testList)
 	{
 		engine.reset();
-		const std::vector<uint8_t> test_data = testUtils::getData(testcase);
+		std::optional<std::vector<uint8_t>> test_data = testcase.source.getData();
 
-		engine.update(test_data);
+		EXPECT_TRUE(test_data.has_value());
+
+		if(!test_data.has_value())
+		{
+			continue;
+		}
+
+		engine.update(test_data.value());
 		engine.finalize();
 
 		const digest_t digest = engine.digest();
@@ -101,9 +108,16 @@ TEST(Hash, SHA2_512)
 	for(const testUtils::Hashable& testcase : testList)
 	{
 		engine.reset();
-		const std::vector<uint8_t> test_data = testUtils::getData(testcase);
+		std::optional<std::vector<uint8_t>> test_data = testcase.source.getData();
 
-		engine.update(test_data);
+		EXPECT_TRUE(test_data.has_value());
+
+		if(!test_data.has_value())
+		{
+			continue;
+		}
+
+		engine.update(test_data.value());
 		engine.finalize();
 
 		const digest_t digest = engine.digest();

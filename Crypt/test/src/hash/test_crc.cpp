@@ -58,7 +58,13 @@ TEST(Hash, CRC_32C)
 	uintptr_t case_count = 0;
 	for(const testUtils::Hashable& testcase : testList)
 	{
-		const std::vector<uint8_t> test_data = testUtils::getData(testcase);
+		std::optional<std::vector<uint8_t>> tdata = testcase.source.getData();
+		EXPECT_TRUE(tdata.has_value());
+		if(!tdata.has_value())
+		{
+			continue;
+		}
+		const std::vector<uint8_t> test_data = std::move(tdata.value());
 		const uintptr_t data_size = test_data.size();
 		std::vector<uint8_t> aligned_data;
 		aligned_data.resize(data_size + 8);
@@ -99,7 +105,14 @@ TEST(Hash, CRC_64)
 	uintptr_t case_count = 0;
 	for(const testUtils::Hashable& testcase : testList)
 	{
-		const std::vector<uint8_t> test_data = testUtils::getData(testcase);
+		std::optional<std::vector<uint8_t>> tdata = testcase.source.getData();
+		EXPECT_TRUE(tdata.has_value());
+		if(!tdata.has_value())
+		{
+			continue;
+		}
+		const std::vector<uint8_t> test_data = std::move(tdata.value());
+
 		const uintptr_t data_size = test_data.size();
 		std::vector<uint8_t> aligned_data;
 		aligned_data.resize(data_size + 8);

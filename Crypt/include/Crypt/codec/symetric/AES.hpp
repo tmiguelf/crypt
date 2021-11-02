@@ -67,6 +67,18 @@ namespace crypt
 		static constexpr uintptr_t block_lenght = 16;
 		static constexpr uintptr_t number_of_rounds = 12;
 
+		static constexpr uintptr_t key_schedule_size = (number_of_rounds + 1) * 4;
+
+		struct key_schedule_t
+		{
+			alignas(8) std::array<_p::wblock_t, key_schedule_size> wkey;
+		};
+
+	public:
+		static void make_key_schedule(std::span<const uint8_t, key_lenght> p_key, key_schedule_t& p_wkey);
+
+		static void encode(const key_schedule_t& p_wkey, std::span<const uint8_t, block_lenght> p_input, std::span<uint8_t, block_lenght> p_out);
+		static void decode(const key_schedule_t& p_wkey, std::span<const uint8_t, block_lenght> p_input, std::span<uint8_t, block_lenght> p_out);
 	};
 
 	class AES_256
@@ -76,6 +88,17 @@ namespace crypt
 		static constexpr uintptr_t block_lenght = 16;
 		static constexpr uintptr_t number_of_rounds = 14;
 
+		static constexpr uintptr_t key_schedule_size = (number_of_rounds + 1) * 4;
 
+		struct key_schedule_t
+		{
+			alignas(8) std::array<_p::wblock_t, key_schedule_size> wkey;
+		};
+
+	public:
+		static void make_key_schedule(std::span<const uint8_t, key_lenght> p_key, key_schedule_t& p_wkey);
+
+		static void encode(const key_schedule_t& p_wkey, std::span<const uint8_t, block_lenght> p_input, std::span<uint8_t, block_lenght> p_out);
+		static void decode(const key_schedule_t& p_wkey, std::span<const uint8_t, block_lenght> p_input, std::span<uint8_t, block_lenght> p_out);
 	};
 }

@@ -4,6 +4,7 @@
 #include <vector>
 #include <filesystem>
 #include <string_view>
+#include <optional>
 
 #include <CoreLib/Core_Type.hpp>
 #include <CoreLib/toPrint/toPrint.hpp>
@@ -17,13 +18,11 @@ public:
 	{
 	}
 
-
 	template<core::_p::c_toPrint_char CharT>
 	inline constexpr uintptr_t size(const CharT&) const
 	{
 		return (m_data.size() * 3) - 1;
 	}
-
 
 	template<core::_p::c_toPrint_char CharT>
 	inline void getPrint(CharT* p_out) const
@@ -47,19 +46,53 @@ private:
 
 namespace testUtils
 {
-
-	struct Hashable
+	struct data_source_t
 	{
-		std::vector<uint8_t> hash;
-		std::vector<uint8_t> data;
-		std::filesystem::path file;
-		bool is_file = false;
+	public:
+		void reset();
+		void set(const std::vector<uint8_t>& p_data);
+		void set(std::vector<uint8_t>&& p_data);
+
+		void set(const std::filesystem::path& p_data);
+		void set(std::filesystem::path&& p_data);
+
+		std::optional<std::vector<uint8_t>> getData() const;
+
+	private:
+		std::vector<uint8_t> m_data;
+		std::filesystem::path m_file;
+		bool m_is_file = false;
+		bool m_has_data = false;
 	};
 
 
-	using HashList = std::vector<Hashable>;
+	struct Hashable
+	{
+		std::vector<uint8_t>	hash;
+		data_source_t			source;
+	};
 
-	HashList getHashList(const std::filesystem::path& p_configPath, std::u32string_view p_hashName, uint32_t p_hashSize);
+	struct SymetricEncodable
+	{
+		struct result_t
+		{
+			std::vector<uint8_t> key;
+			data_source_t source;
+		};
+		data_source_t source;
+		std::vector<result_t> encoded;
+	};
 
-	std::vector<uint8_t> getData(const Hashable& p_hashable);
+
+
+	using HashList		= std::vector<Hashable>;
+	using EncodeList	= std::vector<SymetricEncodable>;
+
+	HashList	getHashList				(const std::filesystem::path& p_configPath, std::u32string_view p_hashName,  uint32_t p_hashSize);
+	EncodeList	getSymetricEncodeList	(const std::filesystem::path& p_configPath, std::u32string_view p_codecName, uint32_t p_keySize);
+
+
+
+
+
 } //namespace TestUntilities
