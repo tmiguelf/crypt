@@ -15,6 +15,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CoreLib", "submodules\utili
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SCEF", "submodules\SCEF\SCEF\SCEF.vcxproj", "{E02AD9B7-192B-490C-8CAC-85726836FB18}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CryptBench", "Crypt\benchmark\CryptBench.vcxproj", "{AD94F392-C554-43D9-8BD2-FB4C096F2BB9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "benchmark", "submodules\benchmark\benchmark\benchmark.vcxproj", "{2B8A8DAF-B3E6-401B-89F7-3F7C3FD4B76F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -71,6 +75,22 @@ Global
 		{E02AD9B7-192B-490C-8CAC-85726836FB18}.WSL_Debug|x64.Build.0 = WSL_Debug|x64
 		{E02AD9B7-192B-490C-8CAC-85726836FB18}.WSL_Release|x64.ActiveCfg = WSL_Release|x64
 		{E02AD9B7-192B-490C-8CAC-85726836FB18}.WSL_Release|x64.Build.0 = WSL_Release|x64
+		{AD94F392-C554-43D9-8BD2-FB4C096F2BB9}.Debug|x64.ActiveCfg = Debug|x64
+		{AD94F392-C554-43D9-8BD2-FB4C096F2BB9}.Debug|x64.Build.0 = Debug|x64
+		{AD94F392-C554-43D9-8BD2-FB4C096F2BB9}.Release|x64.ActiveCfg = Release|x64
+		{AD94F392-C554-43D9-8BD2-FB4C096F2BB9}.Release|x64.Build.0 = Release|x64
+		{AD94F392-C554-43D9-8BD2-FB4C096F2BB9}.WSL_Debug|x64.ActiveCfg = WSL_Debug|x64
+		{AD94F392-C554-43D9-8BD2-FB4C096F2BB9}.WSL_Debug|x64.Build.0 = WSL_Debug|x64
+		{AD94F392-C554-43D9-8BD2-FB4C096F2BB9}.WSL_Release|x64.ActiveCfg = WSL_Release|x64
+		{AD94F392-C554-43D9-8BD2-FB4C096F2BB9}.WSL_Release|x64.Build.0 = WSL_Release|x64
+		{2B8A8DAF-B3E6-401B-89F7-3F7C3FD4B76F}.Debug|x64.ActiveCfg = Debug|x64
+		{2B8A8DAF-B3E6-401B-89F7-3F7C3FD4B76F}.Debug|x64.Build.0 = Debug|x64
+		{2B8A8DAF-B3E6-401B-89F7-3F7C3FD4B76F}.Release|x64.ActiveCfg = Release|x64
+		{2B8A8DAF-B3E6-401B-89F7-3F7C3FD4B76F}.Release|x64.Build.0 = Release|x64
+		{2B8A8DAF-B3E6-401B-89F7-3F7C3FD4B76F}.WSL_Debug|x64.ActiveCfg = WSL_Debug|x64
+		{2B8A8DAF-B3E6-401B-89F7-3F7C3FD4B76F}.WSL_Debug|x64.Build.0 = WSL_Debug|x64
+		{2B8A8DAF-B3E6-401B-89F7-3F7C3FD4B76F}.WSL_Release|x64.ActiveCfg = WSL_Release|x64
+		{2B8A8DAF-B3E6-401B-89F7-3F7C3FD4B76F}.WSL_Release|x64.Build.0 = WSL_Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

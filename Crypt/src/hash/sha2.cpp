@@ -32,7 +32,7 @@
 #include <CoreLib/Core_Type.hpp>
 #include <CoreLib/Core_Endian.hpp>
 
-namespace Crypt
+namespace crypto
 {
 	using core::literals::operator "" _ui32;
 	using core::literals::operator "" _ui64;

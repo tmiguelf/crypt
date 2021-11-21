@@ -12,5 +12,6 @@
 		<Import Project="$(MSBuildThisFileDirectory)submodules/utilities/repoLocations.props" />
 		<Import Project="$(MSBuildThisFileDirectory)submodules/SCEF/repoLocations.props" />
 		<Import Project="$(MSBuildThisFileDirectory)submodules/googletest/repoLocations.props" />
+		<Import Project="$(MSBuildThisFileDirectory)submodules/benchmark/repoLocations.props" />
 	</ImportGroup>
 </Project>

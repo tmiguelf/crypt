@@ -30,10 +30,13 @@
 
 #include <CoreLib/Core_Type.hpp>
 
-namespace Crypt
+#if defined(_M_AMD64) || defined(__amd64__)
+#	include <emmintrin.h>
+#endif
+
+namespace crypto
 {
 	using core::literals::operator "" _ui8;
-	using core::literals::operator "" _ui64;
 
 	static constexpr std::array<uint8_t, 256> invert_s_box(const std::array<uint8_t, 256>& p_s_box)
 	{
@@ -46,28 +49,41 @@ namespace Crypt
 		return out;
 	}
 
-//	static constexpr uint8_t galois_mult(uint8_t p_1, uint8_t p_2)
-//	{
-//		uint8_t p = 0;
-//		while(p_1 && p_2)
-//		{
-//			if(p_2 & 0x01)
-//			{
-//				p ^= p_1;
-//			}
-//
-//			if(p_1 & 0x80)
-//			{
-//				p_1 = (p_1 << 1) ^ 0x1B;
-//			}
-//			else
-//			{
-//				p_1 <<= 1;
-//			}
-//			p_2 >>= 1;
-//		}
-//		return p;
-//	}
+	static constexpr uint8_t galois_mult(uint8_t p_1, uint8_t p_2)
+	{
+		uint8_t p = 0;
+		while(p_1 && p_2)
+		{
+			if(p_2 & 0x01)
+			{
+				p ^= p_1;
+			}
+
+			if(p_1 & 0x80)
+			{
+				p_1 = static_cast<uint8_t>((p_1 << 1) ^ 0x1B);
+			}
+			else
+			{
+				p_1 <<= 1;
+			}
+			p_2 >>= 1;
+		}
+		return p;
+	}
+
+	static constexpr std::array<uint8_t, 256> compute_gal(uint8_t p_1)
+	{
+		std::array<uint8_t, 256> out{};
+
+		uint8_t i = 0;
+		for(uint8_t& t : out)
+		{
+			t = galois_mult(i++, p_1);
+		}
+
+		return out;
+	}
 
 	struct AES_Help
 	{
@@ -117,6 +133,13 @@ namespace Crypt
 			0x01_ui8, 0x02_ui8, 0x04_ui8, 0x08_ui8, 0x10_ui8,
 			0x20_ui8, 0x40_ui8, 0x80_ui8, 0x1B_ui8, 0x36_ui8,
 		};
+
+		//static constexpr std::array<uint8_t, 256> gal_02 = compute_gal(0x02);
+		static constexpr std::array<uint8_t, 256> gal_03 = compute_gal(0x03);
+		static constexpr std::array<uint8_t, 256> gal_09 = compute_gal(0x09);
+		static constexpr std::array<uint8_t, 256> gal_0B = compute_gal(0x0B);
+		static constexpr std::array<uint8_t, 256> gal_0D = compute_gal(0x0D);
+		static constexpr std::array<uint8_t, 256> gal_0E = compute_gal(0x0E);
 
 		static inline void RotWord(uint32_t& p_Key)
 		{
@@ -211,6 +234,75 @@ namespace Crypt
 			}
 		}
 
+		static void galouis_mix(uint8_t* const p_val)
+		{
+			const uint8_t v0 = p_val[0];
+			const uint8_t v1 = p_val[1];
+			const uint8_t v2 = p_val[2];
+			const uint8_t v3 = p_val[3];
+
+			const uint8_t v0_3 = gal_03[v0];
+			const uint8_t v1_3 = gal_03[v1];
+			const uint8_t v2_3 = gal_03[v2];
+			const uint8_t v3_3 = gal_03[v3];
+
+			//note A = A*gal_2 == A ^= A*gal_3
+			p_val[0] ^= v0_3 ^ v1_3 ^ v2   ^ v3;
+			p_val[1] ^= v0   ^ v1_3 ^ v2_3 ^ v3;
+			p_val[2] ^= v0   ^ v1   ^ v2_3 ^ v3_3;
+			p_val[3] ^= v0_3 ^ v1   ^ v2   ^ v3_3;
+		}
+
+		static void inv_galouis_mix(uint8_t* const p_val)
+		{
+			const uint8_t v0 = p_val[0];
+			const uint8_t v1 = p_val[1];
+			const uint8_t v2 = p_val[2];
+			const uint8_t v3 = p_val[3];
+
+			const uint8_t v0_9 = gal_09[v0];
+			const uint8_t v1_9 = gal_09[v1];
+			const uint8_t v2_9 = gal_09[v2];
+			const uint8_t v3_9 = gal_09[v3];
+
+			const uint8_t v0_B = gal_0B[v0];
+			const uint8_t v1_B = gal_0B[v1];
+			const uint8_t v2_B = gal_0B[v2];
+			const uint8_t v3_B = gal_0B[v3];
+
+			const uint8_t v0_D = gal_0D[v0];
+			const uint8_t v1_D = gal_0D[v1];
+			const uint8_t v2_D = gal_0D[v2];
+			const uint8_t v3_D = gal_0D[v3];
+
+			const uint8_t v0_E = gal_0E[v0];
+			const uint8_t v1_E = gal_0E[v1];
+			const uint8_t v2_E = gal_0E[v2];
+			const uint8_t v3_E = gal_0E[v3];
+
+			p_val[0] = v0_E ^ v1_B ^ v2_D ^ v3_9;
+			p_val[1] = v0_9 ^ v1_E ^ v2_B ^ v3_D;
+			p_val[2] = v0_D ^ v1_9 ^ v2_E ^ v3_B;
+			p_val[3] = v0_B ^ v1_D ^ v2_9 ^ v3_E;
+		}
+
+		static void MixColumns(state_t& p_state)
+		{
+			galouis_mix(reinterpret_cast<uint8_t*>(p_state.data()));
+			galouis_mix((reinterpret_cast<uint8_t*>(p_state.data()) + 4));
+			galouis_mix((reinterpret_cast<uint8_t*>(p_state.data()) + 8));
+			galouis_mix((reinterpret_cast<uint8_t*>(p_state.data()) + 12));
+		}
+
+		static void InvMixColumns(state_t& p_state)
+		{
+			inv_galouis_mix(reinterpret_cast<uint8_t*>(p_state.data()));
+			inv_galouis_mix((reinterpret_cast<uint8_t*>(p_state.data()) + 4));
+			inv_galouis_mix((reinterpret_cast<uint8_t*>(p_state.data()) + 8));
+			inv_galouis_mix((reinterpret_cast<uint8_t*>(p_state.data()) + 12));
+		}
+
+#if 0
 		//note:
 		//	1. Galois mult gm(2,P) = (P << 1) ^ (0x80 & P ? 0x1B : 0)
 		//	2. Galois mult gm(3,P) = P ^ gm(2,P)
@@ -239,8 +331,8 @@ namespace Crypt
 		static inline void inv_g_mod(uint8_t& p_1)
 		{
 			constexpr uint8_t v_1 = 0x1B;
-			constexpr uint8_t v_2 = 0x36;
-			constexpr uint8_t v_4 = 0x6C;
+			constexpr uint8_t v_2 = v_1 << 1;
+			constexpr uint8_t v_4 = v_1 << 2;
 
 			constexpr std::array<uint8_t, 8> tab =
 			{
@@ -305,12 +397,68 @@ namespace Crypt
 			inv_galouis_mix(*reinterpret_cast<uint64_t*>(p_state.data()));
 			inv_galouis_mix(*(reinterpret_cast<uint64_t*>(p_state.data()) + 1));
 		}
+#endif
 
 		static void AddRoundKey(state_t& p_state, std::span<const _p::wblock_t, 4> p_roundKey)
 		{
 			*reinterpret_cast<uint64_t*>(p_state.data()) ^= *reinterpret_cast<const uint64_t*>(p_roundKey.data());
 			*(reinterpret_cast<uint64_t*>(p_state.data()) + 1) ^= *(reinterpret_cast<const uint64_t*>(p_roundKey.data()) + 1);
 		}
+
+
+		template<typename T>
+		static inline void encode(const typename T::key_schedule_t& p_wkey, std::span<const uint8_t, 16> p_input, std::span<uint8_t, 16> p_out)
+		{
+			constexpr uintptr_t number_of_rounds = T::number_of_rounds;
+			alignas(16) state_t state;
+			memcpy(&state, p_input.data(), sizeof(state));
+
+			const _p::wblock_t* kpivot = p_wkey.wkey.data();
+
+			for(uint8_t i = 0; i < number_of_rounds - 1; ++i, kpivot +=4)
+			{
+				AddRoundKey(state, std::span<const _p::wblock_t, 4>{kpivot, 4});
+				SubBytes(state);
+				ShiftRows(state);
+				MixColumns(state);
+			}
+
+			AddRoundKey(state, std::span<const _p::wblock_t, 4>{kpivot, 4});
+			kpivot += 4;
+			SubBytes(state);
+			ShiftRows(state);
+			AddRoundKey(state, std::span<const _p::wblock_t, 4>{kpivot, 4});
+
+			memcpy(p_out.data(), &state, sizeof(state));
+		}
+
+		template<typename T>
+		static inline void decode(const typename T::key_schedule_t& p_wkey, std::span<const uint8_t, 16> p_input, std::span<uint8_t, 16> p_out)
+		{
+			constexpr uintptr_t number_of_rounds = T::number_of_rounds;
+			alignas(16) state_t state;
+			memcpy(&state, p_input.data(), sizeof(state));
+
+			const _p::wblock_t* kpivot = p_wkey.wkey.data() + (number_of_rounds * 4);
+
+			AddRoundKey(state, std::span<const _p::wblock_t, 4>{kpivot, 4});
+			kpivot -= 4;
+
+			for(uint8_t i = number_of_rounds - 1; i; --i, kpivot -= 4)
+			{
+				InvShiftRows(state);
+				InvSubBytes(state);
+				AddRoundKey(state, std::span<const _p::wblock_t, 4>{kpivot, 4});
+				InvMixColumns(state);
+			}
+
+			InvShiftRows(state);
+			InvSubBytes(state);
+			AddRoundKey(state, std::span<const _p::wblock_t, 4>{kpivot, 4});
+
+			memcpy(p_out.data(), &state, sizeof(state));
+		}
+
 	};
 
 	void AES_128::make_key_schedule(std::span<const uint8_t, key_lenght> p_key, key_schedule_t& p_wkey)
@@ -340,47 +488,13 @@ namespace Crypt
 
 	void AES_128::encode(const key_schedule_t& p_wkey, std::span<const uint8_t, block_lenght> p_input, std::span<uint8_t, block_lenght> p_out)
 	{
-		alignas(8) AES_Help::state_t state;
-		memcpy(&state, p_input.data(), sizeof(state));
-
-		for(uint8_t i = 0; i < number_of_rounds - 1; ++i)
-		{
-			AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + (i << 2), 4});
-			AES_Help::SubBytes(state);
-			AES_Help::ShiftRows(state);
-			AES_Help::MixColumns(state);
-		}
-
-		AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + ((number_of_rounds - 1) * 4), 4});
-		AES_Help::SubBytes(state);
-		AES_Help::ShiftRows(state);
-		AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + (number_of_rounds * 4), 4});
-
-		memcpy(p_out.data(), &state, sizeof(state));
+		AES_Help::encode<AES_128>(p_wkey, p_input, p_out);
 	}
 
 
 	void AES_128::decode(const key_schedule_t& p_wkey, std::span<const uint8_t, block_lenght> p_input, std::span<uint8_t, block_lenght> p_out)
 	{
-		alignas(8) AES_Help::state_t state;
-		memcpy(&state, p_input.data(), sizeof(state));
-
-		AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + (number_of_rounds * 4), 4});
-
-
-		for(uint8_t i = number_of_rounds - 1; i; --i)
-		{
-			AES_Help::InvShiftRows(state);
-			AES_Help::InvSubBytes(state);
-			AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + (i << 2), 4});
-			AES_Help::InvMixColumns(state);
-		}
-
-		AES_Help::InvShiftRows(state);
-		AES_Help::InvSubBytes(state);
-		AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data(), 4});
-
-		memcpy(p_out.data(), &state, sizeof(state));
+		AES_Help::decode<AES_128>(p_wkey, p_input, p_out);
 	}
 
 
@@ -425,48 +539,13 @@ namespace Crypt
 
 	void AES_192::encode(const key_schedule_t& p_wkey, std::span<const uint8_t, block_lenght> p_input, std::span<uint8_t, block_lenght> p_out)
 	{
-		alignas(8) AES_Help::state_t state;
-		memcpy(&state, p_input.data(), sizeof(state));
-
-		for(uint8_t i = 0; i < number_of_rounds - 1; ++i)
-		{
-			AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + (i << 2), 4});
-			AES_Help::SubBytes(state);
-			AES_Help::ShiftRows(state);
-			AES_Help::MixColumns(state);
-		}
-
-		AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + ((number_of_rounds - 1) * 4), 4});
-		AES_Help::SubBytes(state);
-		AES_Help::ShiftRows(state);
-		AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + (number_of_rounds * 4), 4});
-
-		memcpy(p_out.data(), &state, sizeof(state));
+		AES_Help::encode<AES_192>(p_wkey, p_input, p_out);
 	}
 
 	void AES_192::decode(const key_schedule_t& p_wkey, std::span<const uint8_t, block_lenght> p_input, std::span<uint8_t, block_lenght> p_out)
 	{
-		alignas(8) AES_Help::state_t state;
-		memcpy(&state, p_input.data(), sizeof(state));
-
-		AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + (number_of_rounds * 4), 4});
-
-
-		for(uint8_t i = number_of_rounds - 1; i; --i)
-		{
-			AES_Help::InvShiftRows(state);
-			AES_Help::InvSubBytes(state);
-			AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + (i << 2), 4});
-			AES_Help::InvMixColumns(state);
-		}
-
-		AES_Help::InvShiftRows(state);
-		AES_Help::InvSubBytes(state);
-		AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data(), 4});
-
-		memcpy(p_out.data(), &state, sizeof(state));
+		AES_Help::decode<AES_192>(p_wkey, p_input, p_out);
 	}
-
 
 	void AES_256::make_key_schedule(std::span<const uint8_t, key_lenght> p_key, key_schedule_t& p_wkey)
 	{
@@ -515,46 +594,12 @@ namespace Crypt
 
 	void AES_256::encode(const key_schedule_t& p_wkey, std::span<const uint8_t, block_lenght> p_input, std::span<uint8_t, block_lenght> p_out)
 	{
-		alignas(8) AES_Help::state_t state;
-		memcpy(&state, p_input.data(), sizeof(state));
-
-		for(uint8_t i = 0; i < number_of_rounds - 1; ++i)
-		{
-			AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + (i << 2), 4});
-			AES_Help::SubBytes(state);
-			AES_Help::ShiftRows(state);
-			AES_Help::MixColumns(state);
-		}
-
-		AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + ((number_of_rounds - 1) * 4), 4});
-		AES_Help::SubBytes(state);
-		AES_Help::ShiftRows(state);
-		AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + (number_of_rounds * 4), 4});
-
-		memcpy(p_out.data(), &state, sizeof(state));
+		AES_Help::encode<AES_256>(p_wkey, p_input, p_out);
 	}
 
 	void AES_256::decode(const key_schedule_t& p_wkey, std::span<const uint8_t, block_lenght> p_input, std::span<uint8_t, block_lenght> p_out)
 	{
-		alignas(8) AES_Help::state_t state;
-		memcpy(&state, p_input.data(), sizeof(state));
-
-		AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + (number_of_rounds * 4), 4});
-
-
-		for(uint8_t i = number_of_rounds - 1; i; --i)
-		{
-			AES_Help::InvShiftRows(state);
-			AES_Help::InvSubBytes(state);
-			AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data() + (i << 2), 4});
-			AES_Help::InvMixColumns(state);
-		}
-
-		AES_Help::InvShiftRows(state);
-		AES_Help::InvSubBytes(state);
-		AES_Help::AddRoundKey(state, std::span<const _p::wblock_t, 4>{p_wkey.wkey.data(), 4});
-
-		memcpy(p_out.data(), &state, sizeof(state));
+		AES_Help::decode<AES_256>(p_wkey, p_input, p_out);
 	}
 
 

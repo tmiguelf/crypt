@@ -28,7 +28,7 @@
 #include <array>
 #include <span>
 
-namespace Crypt
+namespace crypto
 {
 	namespace _p
 	{

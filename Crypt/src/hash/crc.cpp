@@ -36,11 +36,10 @@
 
 
 #if defined(_M_AMD64) || defined(__amd64__)
-#include <nmmintrin.h>
-#else
+#	include <nmmintrin.h>
 #endif
 
-namespace Crypt
+namespace crypto
 {
 
 using core::literals::operator "" _ui32;

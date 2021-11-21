@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <bit>
 
-namespace Crypt
+namespace crypto
 {
 	template<uintptr_t Alignment> //requires (std::popcount(Alignment) == 1)
 	inline uintptr_t align_mod(const void* const p_data)

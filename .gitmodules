@@ -14,3 +14,7 @@
 	path = submodules/SCEF
 	url = https://github.com/tmiguelf/SCEF.git
 	ignore = dirty
+[submodule "submodules/benchmark"]
+	path = submodules/benchmark
+	url = https://github.com/tmiguelf/benchmark.git
+	ignore = dirty
