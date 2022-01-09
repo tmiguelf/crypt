@@ -1,5 +1,7 @@
 //======== ======== ======== ======== ======== ======== ======== ========
 ///	\file
+///		AES - Advanced Encryption Standard
+///			Symmetric block cypher
 ///
 ///	\copyright
 ///		Copyright (c) Tiago Miguel Oliveira Freire

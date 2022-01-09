@@ -21,9 +21,6 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\codec\symmetric\bench_AES.cpp" />
-  </ItemGroup>
   <PropertyGroup Label="quickMSBuild" Condition="'$(Configuration)'=='Debug'">
     <CompilerFlavour>MSVC</CompilerFlavour>
     <BuildMethod>native</BuildMethod>
@@ -60,5 +57,8 @@
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\codec\bench_AES.cpp" />
+  </ItemGroup>
   <Import Project="$(quickMSBuildPath)default.cpp.targets" />
 </Project>

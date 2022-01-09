@@ -25,20 +25,8 @@
     <Filter Include="Header Files\codec">
       <UniqueIdentifier>{0da38a3d-5808-482f-97b5-211265d46ced}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\codec\symmetric">
-      <UniqueIdentifier>{c97ccc70-3bd1-4d8e-a7a3-1870773b805d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\codec">
       <UniqueIdentifier>{5a0384bc-2f55-422e-ae55-07a1944c64c2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\codec\symmetric">
-      <UniqueIdentifier>{676fdaea-fdd3-403b-a652-4d17cad43746}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\codec\asymmetric">
-      <UniqueIdentifier>{0b096738-443e-4152-a2c7-7c9e276de9ab}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\codec\asymmetric">
-      <UniqueIdentifier>{84ded984-2b43-4a88-9238-457632dd5f52}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -59,8 +47,11 @@
     <ClInclude Include="include\Crypt\hash\sha2.hpp">
       <Filter>Header Files\hash</Filter>
     </ClInclude>
-    <ClInclude Include="include\Crypt\codec\symmetric\AES.hpp">
-      <Filter>Header Files\codec\symmetric</Filter>
+    <ClInclude Include="include\Crypt\codec\AES.hpp">
+      <Filter>Header Files\codec</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Crypt\codec\ECC.hpp">
+      <Filter>Header Files\codec</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -70,8 +61,11 @@
     <ClCompile Include="src\hash\sha2.cpp">
       <Filter>Source Files\hash</Filter>
     </ClCompile>
-    <ClCompile Include="src\codec\symmetric\AES.cpp">
-      <Filter>Source Files\codec\symmetric</Filter>
+    <ClCompile Include="src\codec\AES.cpp">
+      <Filter>Source Files\codec</Filter>
+    </ClCompile>
+    <ClCompile Include="src\codec\ECC.cpp">
+      <Filter>Source Files\codec</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

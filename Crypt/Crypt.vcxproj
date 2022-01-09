@@ -60,13 +60,15 @@
     <None Include="Crypt.include.props" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Crypt\codec\symmetric\AES.hpp" />
+    <ClInclude Include="include\Crypt\codec\AES.hpp" />
+    <ClInclude Include="include\Crypt\codec\ECC.hpp" />
     <ClInclude Include="include\Crypt\hash\crc.hpp" />
     <ClInclude Include="include\Crypt\hash\sha2.hpp" />
     <ClInclude Include="include\Crypt\utils.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\codec\symmetric\AES.cpp" />
+    <ClCompile Include="src\codec\AES.cpp" />
+    <ClCompile Include="src\codec\ECC.cpp" />
     <ClCompile Include="src\hash\crc.cpp" />
     <ClCompile Include="src\hash\sha2.cpp" />
   </ItemGroup>

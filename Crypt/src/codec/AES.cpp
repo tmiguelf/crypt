@@ -23,7 +23,7 @@
 ///		SOFTWARE.
 //======== ======== ======== ======== ======== ======== ======== ========
 
-#include <Crypt/codec/symmetric/AES.hpp>
+#include <Crypt/codec/AES.hpp>
 
 #include <bit>
 #include <cstring>
