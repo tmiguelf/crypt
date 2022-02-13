@@ -34,6 +34,12 @@
     <Filter Include="Source Files\codec\symmetric">
       <UniqueIdentifier>{676fdaea-fdd3-403b-a652-4d17cad43746}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\codec\asymmetric">
+      <UniqueIdentifier>{0b096738-443e-4152-a2c7-7c9e276de9ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\codec\asymmetric">
+      <UniqueIdentifier>{84ded984-2b43-4a88-9238-457632dd5f52}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Crypt.include.props">

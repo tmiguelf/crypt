@@ -23,9 +23,6 @@
 ///		SOFTWARE.
 //======== ======== ======== ======== ======== ======== ======== ========
 
-
-
-
 #include <array>
 
 #include <CoreLib/Core_Type.hpp>
@@ -38,23 +35,17 @@
 
 #include <Crypt/hash/sha2.hpp>
 
-
 #include <test_utils.hpp>
-
-
-using core::literals::operator "" _ui8;
-using core::literals::operator "" _ui32;
-using core::literals::operator "" _ui64;
 
 
 TEST(Hash, SHA2_256)
 {
-	using digest_t = Crypt::SHA2_256::digest_t;
+	using digest_t = crypto::SHA2_256::digest_t;
 
 	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"SHA2_256", sizeof(digest_t));
 	ASSERT_FALSE(testList.empty());
 
-	Crypt::SHA2_256 engine;
+	crypto::SHA2_256 engine;
 
 	uintptr_t case_count = 0;
 	for(const testUtils::Hashable& testcase : testList)
@@ -97,12 +88,12 @@ TEST(Hash, SHA2_256)
 
 TEST(Hash, SHA2_512)
 {
-	using digest_t = Crypt::SHA2_512::digest_t;
+	using digest_t = crypto::SHA2_512::digest_t;
 
 	testUtils::HashList testList = testUtils::getHashList("../test_vectors/tests.scef", U"SHA2_512", sizeof(digest_t));
 	ASSERT_FALSE(testList.empty());
 
-	Crypt::SHA2_512 engine;
+	crypto::SHA2_512 engine;
 
 	uintptr_t case_count = 0;
 	for(const testUtils::Hashable& testcase : testList)
@@ -136,9 +127,8 @@ TEST(Hash, SHA2_512)
 		ASSERT_TRUE(result)
 			<< "Case " << case_count
 			<< "\n  Actual: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(&digest), sizeof(digest_t)}}
-		<< "\nExpected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), sizeof(digest_t)}};
+			<< "\nExpected: " << testPrint{std::span<const uint8_t>{reinterpret_cast<const uint8_t*>(testcase.hash.data()), sizeof(digest_t)}};
 
 		++case_count;
 	}
-
 }

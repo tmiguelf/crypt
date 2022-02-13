@@ -28,7 +28,7 @@
 #include <cstdint>
 #include <span>
 
-namespace Crypt
+namespace crypto
 {
 
 class CRC_32C

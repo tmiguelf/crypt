@@ -23,9 +23,6 @@
 ///		SOFTWARE.
 //======== ======== ======== ======== ======== ======== ======== ========
 
-
-
-
 #include <array>
 
 #include <CoreLib/Core_Type.hpp>
@@ -42,8 +39,8 @@
 
 TEST(codec_symmetric, AES_128)
 {
-	constexpr uintptr_t block_lenght	= Crypt::AES_128::block_lenght;
-	constexpr uintptr_t key_lenght		= Crypt::AES_128::key_lenght;
+	constexpr uintptr_t block_lenght	= crypto::AES_128::block_lenght;
+	constexpr uintptr_t key_lenght		= crypto::AES_128::key_lenght;
 
 	testUtils::EncodeList testList = testUtils::getSymmetricEncodeList("../test_vectors/tests.scef", U"AES_128", key_lenght);
 	ASSERT_FALSE(testList.empty());
@@ -93,11 +90,11 @@ TEST(codec_symmetric, AES_128)
 			memcpy(expected.data(), texpected.value().data(), block_lenght);
 
 
-			Crypt::AES_128::key_schedule_t tkey_schedule;
-			Crypt::AES_128::make_key_schedule(std::span<const uint8_t, key_lenght>{tkeyCase.key.data(), key_lenght}, tkey_schedule);
+			crypto::AES_128::key_schedule_t tkey_schedule;
+			crypto::AES_128::make_key_schedule(std::span<const uint8_t, key_lenght>{tkeyCase.key.data(), key_lenght}, tkey_schedule);
 
 			std::array<uint8_t, block_lenght> encoded;
-			Crypt::AES_128::encode(
+			crypto::AES_128::encode(
 				tkey_schedule,
 				std::span<const uint8_t, block_lenght>{testData.data(), block_lenght},
 				encoded);
@@ -107,12 +104,12 @@ TEST(codec_symmetric, AES_128)
 
 				ASSERT_TRUE(result)
 					<< "\n  Actual: " << testPrint{encoded}
-				<< "\nExpected: " << testPrint{expected};
+					<< "\nExpected: " << testPrint{expected};
 			}
 
 			std::array<uint8_t, block_lenght> decoded;
 
-			Crypt::AES_128::decode(tkey_schedule, encoded, decoded);
+			crypto::AES_128::decode(tkey_schedule, encoded, decoded);
 			{
 				const bool result2 = (memcmp(decoded.data(), testData.data(), sizeof(decoded)) == 0);
 
@@ -126,8 +123,8 @@ TEST(codec_symmetric, AES_128)
 
 TEST(codec_symmetric, AES_192)
 {
-	constexpr uintptr_t block_lenght	= Crypt::AES_192::block_lenght;
-	constexpr uintptr_t key_lenght		= Crypt::AES_192::key_lenght;
+	constexpr uintptr_t block_lenght	= crypto::AES_192::block_lenght;
+	constexpr uintptr_t key_lenght		= crypto::AES_192::key_lenght;
 
 	testUtils::EncodeList testList = testUtils::getSymmetricEncodeList("../test_vectors/tests.scef", U"AES_192", key_lenght);
 	ASSERT_FALSE(testList.empty());
@@ -177,11 +174,11 @@ TEST(codec_symmetric, AES_192)
 			memcpy(expected.data(), texpected.value().data(), block_lenght);
 
 
-			Crypt::AES_192::key_schedule_t tkey_schedule;
-			Crypt::AES_192::make_key_schedule(std::span<const uint8_t, key_lenght>{tkeyCase.key.data(), key_lenght}, tkey_schedule);
+			crypto::AES_192::key_schedule_t tkey_schedule;
+			crypto::AES_192::make_key_schedule(std::span<const uint8_t, key_lenght>{tkeyCase.key.data(), key_lenght}, tkey_schedule);
 
 			std::array<uint8_t, block_lenght> encoded;
-			Crypt::AES_192::encode(
+			crypto::AES_192::encode(
 				tkey_schedule,
 				std::span<const uint8_t, block_lenght>{testData.data(), block_lenght},
 				encoded);
@@ -196,7 +193,7 @@ TEST(codec_symmetric, AES_192)
 
 			std::array<uint8_t, block_lenght> decoded;
 
-			Crypt::AES_192::decode(tkey_schedule, encoded, decoded);
+			crypto::AES_192::decode(tkey_schedule, encoded, decoded);
 			{
 				const bool result2 = (memcmp(decoded.data(), testData.data(), sizeof(decoded)) == 0);
 
@@ -210,8 +207,8 @@ TEST(codec_symmetric, AES_192)
 
 TEST(codec_symmetric, AES_256)
 {
-	constexpr uintptr_t block_lenght	= Crypt::AES_256::block_lenght;
-	constexpr uintptr_t key_lenght		= Crypt::AES_256::key_lenght;
+	constexpr uintptr_t block_lenght	= crypto::AES_256::block_lenght;
+	constexpr uintptr_t key_lenght		= crypto::AES_256::key_lenght;
 
 	testUtils::EncodeList testList = testUtils::getSymmetricEncodeList("../test_vectors/tests.scef", U"AES_256", key_lenght);
 	ASSERT_FALSE(testList.empty());
@@ -261,11 +258,11 @@ TEST(codec_symmetric, AES_256)
 			memcpy(expected.data(), texpected.value().data(), block_lenght);
 
 
-			Crypt::AES_256::key_schedule_t tkey_schedule;
-			Crypt::AES_256::make_key_schedule(std::span<const uint8_t, key_lenght>{tkeyCase.key.data(), key_lenght}, tkey_schedule);
+			crypto::AES_256::key_schedule_t tkey_schedule;
+			crypto::AES_256::make_key_schedule(std::span<const uint8_t, key_lenght>{tkeyCase.key.data(), key_lenght}, tkey_schedule);
 
 			std::array<uint8_t, block_lenght> encoded;
-			Crypt::AES_256::encode(
+			crypto::AES_256::encode(
 				tkey_schedule,
 				std::span<const uint8_t, block_lenght>{testData.data(), block_lenght},
 				encoded);
@@ -275,12 +272,12 @@ TEST(codec_symmetric, AES_256)
 
 				ASSERT_TRUE(result)
 					<< "\n  Actual: " << testPrint{encoded}
-				<< "\nExpected: " << testPrint{expected};
+					<< "\nExpected: " << testPrint{expected};
 			}
 
 			std::array<uint8_t, block_lenght> decoded;
 
-			Crypt::AES_256::decode(tkey_schedule, encoded, decoded);
+			crypto::AES_256::decode(tkey_schedule, encoded, decoded);
 			{
 				const bool result2 = (memcmp(decoded.data(), testData.data(), sizeof(decoded)) == 0);
 
