@@ -39,6 +39,9 @@
 #endif
 
 #include <CoreLib/Core_Type.hpp>
+#include <CoreLib/Core_Endian.hpp>
+
+#include <Crypt/hash/sha2.hpp>
 
 
 namespace crypto
@@ -77,9 +80,10 @@ namespace crypto
 		//ED: a * x^2 + y^2 = 1 + d * x^2 * y^2
 		// a = -1
 		// d = -121665/121666
+		// P = 2^255-19
 
-		using coord_t = ElypticCurve_Ed25519::coord_t;
-		using point_t = ElypticCurve_Ed25519::point_t;
+		using coord_t = Ed25519::coord_t;
+		using point_t = Ed25519::point_t;
 		using block_t = std::array<uint64_t, 4>;
 
 		struct projective_point_t
@@ -126,7 +130,6 @@ namespace crypto
 	//	};
 	//
 	//	static constexpr uint32_t A{0x00076d06};
-	//	static constexpr uint32_t B{0x00000001};
 
 		//Edwards
 		static constexpr coord_t X
@@ -979,12 +982,12 @@ namespace crypto
 	};
 
 
-	void ElypticCurve_Ed25519::public_key(std::span<const uint8_t, key_lenght> p_private_key, point_t& p_public_key)
+	void Ed25519::public_key(std::span<const uint8_t, key_lenght> p_private_key, point_t& p_public_key)
 	{
 		composite_key(p_private_key, Curve_25519::generator, p_public_key);
 	}
 
-	void ElypticCurve_Ed25519::composite_key(std::span<const uint8_t, key_lenght> p_private_key, const point_t& p_public_key, point_t& p_shared_key)
+	void Ed25519::composite_key(std::span<const uint8_t, key_lenght> p_private_key, const point_t& p_public_key, point_t& p_shared_key)
 	{
 		//TODO: Mod private key in relation to the order
 
@@ -1046,13 +1049,13 @@ namespace crypto
 	}
 
 
-	void ElypticCurve_Ed25519::key_compress(const point_t& p_public_key, std::span<uint8_t, key_lenght> p_compressed_key)
+	void Ed25519::key_compress(const point_t& p_public_key, std::span<uint8_t, key_lenght> p_compressed_key)
 	{
 		memcpy(p_compressed_key.data(), p_public_key.m_y.data(), key_lenght);
 		p_compressed_key[31] |= static_cast<uint8_t>(p_public_key.m_x[0] << 7);
 	}
 
-	bool ElypticCurve_Ed25519::key_expand(const std::span<const uint8_t, key_lenght> p_compressed_key, point_t& p_public_key)
+	bool Ed25519::key_expand(const std::span<const uint8_t, key_lenght> p_compressed_key, point_t& p_public_key)
 	{
 		memcpy(p_public_key.m_y.data(), p_compressed_key.data(), key_lenght);
 		p_public_key.m_y[31] &= 0x7F;
@@ -1212,4 +1215,50 @@ namespace crypto
 		return true;
 	}
 
+
+	void Ed25519::hashed_private_key(
+		std::span<const uint8_t, key_lenght> p_input,
+		std::span<uint8_t, key_lenght> p_output)
+	{
+
+		Curve_25519::block_t temp;
+
+		{
+			crypto::SHA2_512 ash;
+			ash.reset();
+			ash.update(p_input);
+			ash.finalize();
+
+			const crypto::SHA2_512::digest_t& res = ash.digest();
+
+			static_assert(std::is_same_v<std::remove_cvref_t<decltype(res)>::value_type, uint64_t>);
+
+			temp[0] = core::endian_host2big(res[0]);
+			temp[1] = core::endian_host2big(res[1]);
+			temp[2] = core::endian_host2big(res[2]);
+			temp[3] = core::endian_host2big(res[3]);
+		}
+
+		{
+			std::array<uint8_t, key_lenght>& conv = *reinterpret_cast<std::array<uint8_t, key_lenght>*>(&temp);
+			conv[0] &= 0xF8;
+			conv[31] &= 0x7F;
+			conv[31] |= 0x40;
+		}
+		Curve_25519::order_reduce(temp);
+
+		memcpy(p_output.data(), temp.data(), key_lenght);
+	}
+
+	void Ed25519::reduce_private_key(std::span<uint8_t, key_lenght> p_private_key)
+	{
+		Curve_25519::block_t temp;
+		memcpy(temp.data(), p_private_key.data(), key_lenght);
+		Curve_25519::order_reduce(temp);
+		memcpy(p_private_key.data(), temp.data(), key_lenght);
+	}
+
+
+
 } //namespace crypto
+

@@ -32,7 +32,9 @@
 
 namespace crypto
 {
-	class ElypticCurve_Ed25519
+	///  \brief 
+	///		Elyptic curve cryptography, Edwards 22519
+	class Ed25519
 	{
 	public:
 		static constexpr uintptr_t key_lenght  = 32;
@@ -47,6 +49,9 @@ namespace crypto
 			alignas(8) coord_t m_y;
 		};
 
+		static void hashed_private_key(std::span<const uint8_t, key_lenght> p_input, std::span<uint8_t, key_lenght> p_output);
+		static void reduce_private_key(std::span<uint8_t, key_lenght> p_private_key);
+
 		static void public_key   (std::span<const uint8_t, key_lenght> p_private_key, point_t& p_public_key);
 		static void composite_key(std::span<const uint8_t, key_lenght> p_private_key, const point_t& p_public_key, point_t& p_shared_key);
 
@@ -54,29 +59,6 @@ namespace crypto
 		static bool key_expand  (const std::span<const uint8_t, key_lenght> p_compressed_key, point_t& p_public_key);
 	};
 
-
-
-
-
-
-
-	class training_curve
-	{
-	public:
-		static constexpr uintptr_t key_lenght = 1;
-		using key_t   = uint8_t;
-		using coord_t = key_t;
-
-		struct point_t
-		{
-			coord_t m_x;
-			coord_t m_y;
-		};
-
-		static void public_key(uint8_t p_private_key, point_t& p_public_key);
-		static void composite_key(uint8_t p_private_key, const point_t& p_public_key, point_t& p_shared_key);
-
-	};
 
 
 

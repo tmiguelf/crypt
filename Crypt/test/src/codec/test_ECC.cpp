@@ -35,87 +35,68 @@
 #include <gmock/gmock.h>
 
 #include <Crypt/codec/ECC.hpp>
+#include <Crypt/hash/sha2.hpp>
 
 #include <test_utils.hpp>
 
-#include "../src/codec/ECC.cpp"
 
-
-TEST(codec_asymmetric, ECC_ED25519_compute)
+TEST(codec_asymmetric, ED25519_gen_public)
 {
-	using key_t   = crypto::ElypticCurve_Ed25519::key_t;
-	using point_t = crypto::ElypticCurve_Ed25519::point_t;
+	using key_t   = crypto::Ed25519::key_t;
+	using point_t = crypto::Ed25519::point_t;
+
+	constexpr uintptr_t key_size = sizeof(key_t);
+
 	struct TestCase
 	{
 		key_t private_key;
 		key_t public_key;
 	};
 
-	const std::array test_cases
-	{
-	//	TestCase
-	//	{
-	//		.private_key
-	//		{
-	//			0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-	//			0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
-	//			0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
-	//			0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x00,
-	//		},
-	//		.public_key
-	//		{
-	//			0x20, 0xDA, 0xCB, 0xAB, 0x40, 0x74, 0x14, 0x01,
-	//			0x09, 0xE7, 0x17, 0xEE, 0x73, 0x43, 0xD3, 0x44,
-	//			0xE8, 0xCA, 0xD0, 0x7F, 0xCA, 0x9F, 0x0E, 0xC4,
-	//			0x55, 0x7D, 0xE5, 0x27, 0xFD, 0xDF, 0x8A, 0xBD,
-	//		}
-	//	},
-		TestCase
-		{
-			.private_key
-			{
+	testUtils::PairList cases = testUtils::getPrivatePublicKeyList("../test_vectors/tests.scef", U"Ed25519_hashed", key_size, key_size);
 
-				0x9d, 0x61, 0xb1, 0x9d, 0xef, 0xfd, 0x5a, 0x60,
-				0xba, 0x84, 0x4a, 0xf4, 0x92, 0xec, 0x2c, 0xc4,
-				0x44, 0x49, 0xc5, 0x69, 0x7b, 0x32, 0x69, 0x19,
-				0x70, 0x3b, 0xac, 0x03, 0x1c, 0xae, 0x7f, 0x60,
-			},
-			.public_key
-			{
-				0xd7, 0x5a, 0x98, 0x01, 0x82, 0xb1, 0x0a, 0xb7,
-				0xd5, 0x4b, 0xfe, 0xd3, 0xc9, 0x64, 0x07, 0x3a,
-				0x0e, 0xe1, 0x72, 0xf3, 0xda, 0xa6, 0x23, 0x25,
-				0xaf, 0x02, 0x1a, 0x68, 0xf7, 0x07, 0x51, 0x1a,
-			}
-		},
-	};
-
-	for(const TestCase& tcase : test_cases)
+	for(const testUtils::DataPair& tcase : cases)
 	{
+		key_t private_key;
+		key_t expected_public_key;
+
+		memcpy(private_key.data(), tcase.d0.data(), key_size);
+		memcpy(expected_public_key.data(), tcase.d1.data(), key_size);
+
 		point_t computed_key;
 		key_t compressed_key;
-		crypto::ElypticCurve_Ed25519::public_key(tcase.private_key, computed_key);
-		crypto::ElypticCurve_Ed25519::key_compress(computed_key, compressed_key);
+	
+		{
+			key_t hashed_private_key;
+			crypto::Ed25519::hashed_private_key(private_key, hashed_private_key);
+			crypto::Ed25519::public_key(hashed_private_key, computed_key);
+		}
 
-		const bool result = (memcmp(compressed_key.data(), tcase.public_key.data(), sizeof(key_t)) == 0);
-
+		crypto::Ed25519::key_compress(computed_key, compressed_key);
+	
+		const bool result = (memcmp(compressed_key.data(), expected_public_key.data(), key_size) == 0);
+	
 		ASSERT_TRUE(result)
-			<< "\n  Actual: " << testPrint{compressed_key}
-			<< "\nExpected: " << testPrint{tcase.public_key}
-			<< "\n       X: " << testPrint{computed_key.m_x}
-			<< "\n       Y: " << testPrint{computed_key.m_y};
+			<< "\nCase    : " << testPrint{private_key}
+			<< "\nExpected: " << testPrint{expected_public_key}
+			<< "\nActual  : " << testPrint{compressed_key}
+			<< "\nX       : " << testPrint{computed_key.m_x}
+			<< "\nY       : " << testPrint{computed_key.m_y};
 	}
+
 }
-TEST(codec_asymmetric, ECC_ED25519_key_agreement)
+TEST(codec_asymmetric, ED25519_key_agreement)
 {
 	std::random_device rd;  //Will be used to obtain a seed for the random number engine
 	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
 	std::uniform_int_distribution<uint64_t> distrib(0, std::numeric_limits<uint64_t>::max());
 
-	crypto::ElypticCurve_Ed25519::key_t secret1;
-	crypto::ElypticCurve_Ed25519::key_t secret2;
+	alignas(8) crypto::Ed25519::key_t secret1;
+	alignas(8) crypto::Ed25519::key_t secret2;
+
+	using alias_t = std::array<uint64_t, 4>;
 	{
-		crypto::Curve_25519::block_t& temp = reinterpret_cast<crypto::Curve_25519::block_t&>(secret1);
+		alias_t& temp = reinterpret_cast<alias_t&>(secret1);
 		temp[0] = distrib(gen);
 		temp[1] = distrib(gen);
 		temp[2] = distrib(gen);
@@ -123,82 +104,65 @@ TEST(codec_asymmetric, ECC_ED25519_key_agreement)
 	}
 
 	{
-		crypto::Curve_25519::block_t& temp = reinterpret_cast<crypto::Curve_25519::block_t&>(secret2);
+		alias_t& temp = reinterpret_cast<alias_t&>(secret2);
 		temp[0] = distrib(gen);
 		temp[1] = distrib(gen);
 		temp[2] = distrib(gen);
 		temp[3] = distrib(gen);
 	}
 
-	crypto::ElypticCurve_Ed25519::point_t pub1;
-	crypto::ElypticCurve_Ed25519::public_key(secret1, pub1);
+	crypto::Ed25519::point_t pub1;
+	crypto::Ed25519::public_key(secret1, pub1);
 
-	crypto::ElypticCurve_Ed25519::point_t pub2;
-	crypto::ElypticCurve_Ed25519::public_key(secret2, pub2);
+	crypto::Ed25519::point_t pub2;
+	crypto::Ed25519::public_key(secret2, pub2);
 
-	crypto::ElypticCurve_Ed25519::point_t shared1;
-	crypto::ElypticCurve_Ed25519::point_t shared2;
+	crypto::Ed25519::point_t shared1;
+	crypto::Ed25519::point_t shared2;
 
-	crypto::ElypticCurve_Ed25519::composite_key(secret1, pub2, shared1);
-	crypto::ElypticCurve_Ed25519::composite_key(secret2, pub1, shared2);
+	crypto::Ed25519::composite_key(secret1, pub2, shared1);
+	crypto::Ed25519::composite_key(secret2, pub1, shared2);
 
-	const bool result = (memcmp(&shared1, &shared2, sizeof(crypto::ElypticCurve_Ed25519::point_t)) == 0);
+	const bool result = (memcmp(&shared1, &shared2, sizeof(crypto::Ed25519::point_t)) == 0);
 	ASSERT_TRUE(result)
-		<< "\nShare 1: " << '{' << testPrint{shared1.m_x} << "; " << testPrint{shared1.m_y} << '}'
-		<< "\nShare 2: " << '{' << testPrint{shared2.m_x} << "; " << testPrint{shared2.m_y} << '}';
-
+		<< "\nShared 1: " << '{' << testPrint{shared1.m_x} << "; " << testPrint{shared1.m_y} << '}'
+		<< "\nShared 2: " << '{' << testPrint{shared2.m_x} << "; " << testPrint{shared2.m_y} << '}'
+		<< "\nSecret 1: " << testPrint{secret1}
+		<< "\nSecret 2: " << testPrint{secret2};
 }
 
-TEST(codec_asymmetric, ECC_2_compute)
+TEST(codec_asymmetric, ED25519_compress_roundtrip)
 {
-	crypto::ElypticCurve_Ed25519::key_t secret1
+	std::random_device rd;  //Will be used to obtain a seed for the random number engine
+	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+	std::uniform_int_distribution<uint64_t> distrib(0, std::numeric_limits<uint64_t>::max());
+
+	alignas(8) crypto::Ed25519::key_t secret1;
+
+	using alias_t = std::array<uint64_t, 4>;
 	{
-		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
-		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x38,
-		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x00,
-	};
+		alias_t& temp = reinterpret_cast<alias_t&>(secret1);
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+	}
 
-	crypto::ElypticCurve_Ed25519::point_t pub1;
-	crypto::ElypticCurve_Ed25519::public_key(secret1, pub1);
+	crypto::Ed25519::point_t pub1;
+	crypto::Ed25519::public_key(secret1, pub1);
 
-	crypto::ElypticCurve_Ed25519::key_t compress;
-	crypto::ElypticCurve_Ed25519::point_t expanded;
+	crypto::Ed25519::key_t compress;
+	crypto::Ed25519::point_t expanded;
 
-	crypto::ElypticCurve_Ed25519::key_compress(pub1, compress);
+	crypto::Ed25519::key_compress(pub1, compress);
 	{
-		const bool expand_res = crypto::ElypticCurve_Ed25519::key_expand(compress, expanded);
+		const bool expand_res = crypto::Ed25519::key_expand(compress, expanded);
 		ASSERT_TRUE(expand_res);
 	}
 
-	const bool result = (memcmp(&pub1, &expanded, sizeof(crypto::ElypticCurve_Ed25519::point_t)) == 0);
+	const bool result = (memcmp(&pub1, &expanded, sizeof(crypto::Ed25519::point_t)) == 0);
 	ASSERT_TRUE(result)
 		<< "\nOrigin    : " << '{' << testPrint{pub1.m_x} << "; " << testPrint{pub1.m_y} << '}'
-		<< "\nRound-trip: " << '{' << testPrint{expanded.m_x} << "; " << testPrint{expanded.m_y} << '}';
-
-#if 0
-	crypto::Curve_25519::block_t accum{2, 0, 0, 0};
-	{
-		crypto::Curve_25519::block_t z;
-
-		crypto::Curve_25519::mod_square(z, accum);
-		crypto::Curve_25519::mod_multiply(accum, accum, z);
-		crypto::Curve_25519::mod_square(z, z);
-
-		for(uint8_t i = 0; i < 250; ++i)
-		{
-			crypto::Curve_25519::mod_square(z, z);
-			crypto::Curve_25519::mod_multiply(accum, accum, z);
-		}
-	}
-	crypto::Curve_25519::block_t expect
-	{
-		0xc4ee1b274a0ea0b0,
-		0x2f431806ad2fe478,
-		0x2b4d00993dfbd7a7,
-		0x2b8324804fc1df0b
-	};
-
-	EXPECT_EQ(accum, expect);
-#endif
+		<< "\nRound-trip: " << '{' << testPrint{expanded.m_x} << "; " << testPrint{expanded.m_y} << '}'
+		<< "\nSecret    : " << testPrint{secret1};
 }

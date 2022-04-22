@@ -64,7 +64,7 @@
     <ClCompile Include="src\codec\AES.cpp">
       <Filter>Source Files\codec</Filter>
     </ClCompile>
-    <ClCompile Include="src\codec\ECC.cpp">
+    <ClCompile Include="src\codec\Ed25519.cpp">
       <Filter>Source Files\codec</Filter>
     </ClCompile>
   </ItemGroup>

@@ -68,7 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\codec\AES.cpp" />
-    <ClCompile Include="src\codec\ECC.cpp" />
+    <ClCompile Include="src\codec\Ed25519.cpp" />
     <ClCompile Include="src\hash\crc.cpp" />
     <ClCompile Include="src\hash\sha2.cpp" />
   </ItemGroup>
