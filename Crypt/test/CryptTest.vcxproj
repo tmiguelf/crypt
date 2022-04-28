@@ -65,6 +65,7 @@
   <ItemGroup>
     <ClCompile Include="src\codec\test_AES.cpp" />
     <ClCompile Include="src\codec\test_ECC.cpp" />
+    <ClCompile Include="src\codec\test_extended_precision.cpp" />
     <ClCompile Include="src\hash\test_crc.cpp" />
     <ClCompile Include="src\hash\test_sha2.cpp" />
     <ClCompile Include="src\test_utils.cpp" />

@@ -19,6 +19,9 @@
     <Filter Include="Source Files\codec">
       <UniqueIdentifier>{3dd816e6-4026-4253-8535-94ee17c5f138}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\utils">
+      <UniqueIdentifier>{908a1146-d3d3-49a5-85ad-9fcf0072578c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\hash\test_crc.cpp">
@@ -35,6 +38,9 @@
     </ClCompile>
     <ClCompile Include="src\codec\test_ECC.cpp">
       <Filter>Source Files\codec</Filter>
+    </ClCompile>
+    <ClCompile Include="src\codec\test_extended_precision.cpp">
+      <Filter>Source Files\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

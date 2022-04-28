@@ -43,6 +43,11 @@ public:
 	{
 	}
 
+	testPrint(const std::span<const uint64_t> p_data)
+		: m_data(reinterpret_cast<const uint8_t*>(p_data.data()), p_data.size() * 8)
+	{
+	}
+
 	template<core::_p::c_toPrint_char CharT>
 	inline constexpr uintptr_t size(const CharT&) const
 	{

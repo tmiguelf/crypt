@@ -30,7 +30,7 @@
 >
 
 <test_vectors_public_key:
-	#Credit: Libgcrypt for the ED25519 vectors:
+	#Credit: Libgcrypt for the ED25519 test vectors:
 	#	https://github.com/gpg/libgcrypt
 	#	https://gnupg.org/index.html
 	<Ed25519_hashed:

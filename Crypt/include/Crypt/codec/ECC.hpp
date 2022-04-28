@@ -26,27 +26,31 @@
 //======== ======== ======== ======== ======== ======== ======== ========
 
 #pragma once
+
 #include <cstdint>
 #include <array>
 #include <span>
 
 namespace crypto
 {
-	///  \brief 
-	///		Elyptic curve cryptography, Edwards 22519
+	///	\brief 
+	///		Edwards 22519
+	///		a * x^2 + y^2 = 1 + d * x^2 * y^2 (mod P)
+	///		a = -1
+	///		d = -121665/121666
+	///		P = 2^255-19
 	class Ed25519
 	{
 	public:
 		static constexpr uintptr_t key_lenght  = 32;
-		static constexpr uintptr_t data_lenght = key_lenght;
 
 		using key_t   = std::array<uint8_t, key_lenght>;
-		using coord_t = key_t;
+		using coord_t = std::array<uint64_t, 4>;
 
 		struct point_t
 		{
-			alignas(8) coord_t m_x;
-			alignas(8) coord_t m_y;
+			coord_t m_x;
+			coord_t m_y;
 		};
 
 		static void hashed_private_key(std::span<const uint8_t, key_lenght> p_input, std::span<uint8_t, key_lenght> p_output);
@@ -60,9 +64,29 @@ namespace crypto
 	};
 
 
+	///	\brief 
+	///		Edwards 521
+	///		a * x^2 + y^2 = 1 + d * x^2 * y^2 (mod P)
+	///		a = 1
+	///		d = -376014
+	///		P = 2^521-1
+	class Ed521
+	{
+	public:
+		static constexpr uintptr_t key_lenght  = 65;
+
+		using key_t   = std::array<uint8_t, key_lenght>;
+		using coord_t = std::array<uint64_t, 9>;
+
+		struct point_t
+		{
+			coord_t m_x;
+			coord_t m_y;
+		};
 
 
 
 
+	};
 
 } //namespace crypto

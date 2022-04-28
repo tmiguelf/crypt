@@ -85,6 +85,7 @@ TEST(codec_asymmetric, ED25519_gen_public)
 	}
 
 }
+
 TEST(codec_asymmetric, ED25519_key_agreement)
 {
 	std::random_device rd;  //Will be used to obtain a seed for the random number engine
@@ -157,7 +158,9 @@ TEST(codec_asymmetric, ED25519_compress_roundtrip)
 	crypto::Ed25519::key_compress(pub1, compress);
 	{
 		const bool expand_res = crypto::Ed25519::key_expand(compress, expanded);
-		ASSERT_TRUE(expand_res);
+		ASSERT_TRUE(expand_res)
+			<< "\nOrigin    : " << '{' << testPrint{pub1.m_x} << "; " << testPrint{pub1.m_y} << '}'
+			<< "\nSecret    : " << testPrint{secret1};
 	}
 
 	const bool result = (memcmp(&pub1, &expanded, sizeof(crypto::Ed25519::point_t)) == 0);

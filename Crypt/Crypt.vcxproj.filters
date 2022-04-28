@@ -16,9 +16,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\hash">
-      <UniqueIdentifier>{147e2617-383a-4449-b244-86f15f5672a4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\hash">
       <UniqueIdentifier>{4aea4ff1-780c-45dd-b6bc-df1ae6792897}</UniqueIdentifier>
     </Filter>
@@ -27,6 +24,9 @@
     </Filter>
     <Filter Include="Source Files\codec">
       <UniqueIdentifier>{5a0384bc-2f55-422e-ae55-07a1944c64c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\codec\hash">
+      <UniqueIdentifier>{147e2617-383a-4449-b244-86f15f5672a4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -53,18 +53,24 @@
     <ClInclude Include="include\Crypt\codec\ECC.hpp">
       <Filter>Header Files\codec</Filter>
     </ClInclude>
+    <ClInclude Include="src\codec\extended_precision.hpp">
+      <Filter>Source Files\codec</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\hash\crc.cpp">
-      <Filter>Source Files\hash</Filter>
+      <Filter>Source Files\codec\hash</Filter>
     </ClCompile>
     <ClCompile Include="src\hash\sha2.cpp">
-      <Filter>Source Files\hash</Filter>
+      <Filter>Source Files\codec\hash</Filter>
     </ClCompile>
     <ClCompile Include="src\codec\AES.cpp">
       <Filter>Source Files\codec</Filter>
     </ClCompile>
     <ClCompile Include="src\codec\Ed25519.cpp">
+      <Filter>Source Files\codec</Filter>
+    </ClCompile>
+    <ClCompile Include="src\codec\Ed521.cpp">
       <Filter>Source Files\codec</Filter>
     </ClCompile>
   </ItemGroup>
