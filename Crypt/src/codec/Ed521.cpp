@@ -87,14 +87,14 @@ namespace crypto
 
 		static constexpr coord_t X
 		{
-			0x302a940a2f19ba6c_ui64,
-			0x59d0fb13364838aa_ui64,
-			0xae949d568fc99c60_ui64,
-			0xf6ecc5ccc72434b1_ui64,
-			0x8bf3c9c0c6203913_ui64,
-			0xbfd9f42fc6c818ec_ui64,
-			0xf90cb2296b2878a3_ui64,
-			0x2cb45c48648b189d_ui64,
+			0x302A940A2F19BA6C_ui64,
+			0x59D0FB13364838AA_ui64,
+			0xAE949D568FC99C60_ui64,
+			0xF6ECC5CCC72434B1_ui64,
+			0x8BF3C9C0C6203913_ui64,
+			0xBFD9F42FC6C818EC_ui64,
+			0xF90CB2296B2878A3_ui64,
+			0x2CB45C48648B189D_ui64,
 			0x0000000000000075_ui64,
 		};
 
@@ -290,15 +290,500 @@ namespace crypto
 			mod_add(p_val, p_val, p_val);
 		}
 
-	//	static void order_reduce(block_t& p_val)
+		static void order_reduce(block_t& p_val)
+		{
+			if(p_val[8] & 0xFF80)
+			{
+				const uint64_t div = p_val[8] / (order[8] + 1);
+
+				uint64_t mul_carry;
+				uint8_t borrow;
+				uint8_t borrow2 = 0;
+				uint64_t tmp;
+
+				borrow = subborrow(0, p_val[0], umul(order[0], div, &mul_carry), p_val.data() + 0);
+
+				for(uint8_t i = 1; i < 9; ++i)
+				{
+					borrow  = subborrow(borrow , p_val[i], mul_carry                      , &tmp);
+					borrow2 = subborrow(borrow2, tmp     , umul(order[i], div, &mul_carry), p_val.data() + i);
+				}
+
+				if(p_val[8] & 0xFF80)
+				{
+					uint8_t borrow2 = 0;
+					borrow = subborrow(0, p_val[0], umul(order[0], div, &mul_carry), p_val.data() + 0);
+					for(uint8_t i = 1; i < 9; ++i)
+					{
+						borrow  = subborrow(borrow , p_val[i], mul_carry                      , &tmp);
+						borrow2 = subborrow(borrow2, tmp     , umul(order[i], div, &mul_carry), p_val.data() + i);
+					}
+				}
+			}
+			if
+			(
+				p_val[8] > order[8] ||
+				(
+					p_val[8] == order[8] &&
+					p_val[7] == order[7] &&
+					p_val[6] == order[6] &&
+					p_val[5] == order[5] &&
+					(
+						p_val[4] > order[4] ||
+						(
+							p_val[4] == order[4] &&
+							(
+								p_val[3] > order[3] ||
+								(
+									p_val[3] == order[3] &&
+									(
+										p_val[2] > order[2] ||
+										(
+											p_val[2] == order[2] &&
+											(
+												p_val[1] > order[1] ||
+												(
+													p_val[1] == order[1] &&
+													p_val[0] == order[0]
+												)
+											)
+										)
+									)
+								)
+							)
+						)
+					)
+				)
+			)
+			{
+				uint8_t borrow = 0;
+				borrow = subborrow(0     , p_val[0], order[0], p_val.data() + 0);
+				borrow = subborrow(borrow, p_val[1], order[1], p_val.data() + 1);
+				borrow = subborrow(borrow, p_val[2], order[2], p_val.data() + 2);
+				borrow = subborrow(borrow, p_val[3], order[3], p_val.data() + 3);
+				borrow = subborrow(borrow, p_val[4], order[4], p_val.data() + 4);
+				borrow = subborrow(borrow, p_val[5], order[5], p_val.data() + 5);
+				borrow = subborrow(borrow, p_val[6], order[6], p_val.data() + 6);
+				borrow = subborrow(borrow, p_val[7], order[7], p_val.data() + 7);
+				         subborrow(borrow, p_val[8], order[8], p_val.data() + 8);
+			}
+		}
+
+
+		static void mul_reduce(std::array<uint64_t, 17>& p_val)
+		{
+			if
+			(
+				p_val[ 8] & 0xFFFFFFFFFFFFFE00 || 
+				p_val[ 9] ||
+				p_val[10] ||
+				p_val[11] ||
+				p_val[12] ||
+				p_val[13] ||
+				p_val[14] ||
+				p_val[15] ||
+				p_val[16]
+			)
+			{
+				uint8_t carry;
+				carry = addcarry(0    , p_val[0], (p_val[ 8] >> 9) | (p_val[ 9] << 55), p_val.data() + 0);
+				carry = addcarry(carry, p_val[1], (p_val[ 9] >> 9) | (p_val[10] << 55), p_val.data() + 1);
+				carry = addcarry(carry, p_val[2], (p_val[10] >> 9) | (p_val[11] << 55), p_val.data() + 2);
+				carry = addcarry(carry, p_val[3], (p_val[11] >> 9) | (p_val[12] << 55), p_val.data() + 3);
+				carry = addcarry(carry, p_val[4], (p_val[12] >> 9) | (p_val[13] << 55), p_val.data() + 4);
+				carry = addcarry(carry, p_val[5], (p_val[13] >> 9) | (p_val[14] << 55), p_val.data() + 5);
+				carry = addcarry(carry, p_val[6], (p_val[14] >> 9) | (p_val[15] << 55), p_val.data() + 6);
+				carry = addcarry(carry, p_val[7], (p_val[15] >> 9) | (p_val[16] << 55), p_val.data() + 7);
+				        addcarry(carry, p_val[8] & 0x1FF, (p_val[16] >> 9)            , p_val.data() + 8);
+
+				if(p_val[8] & 0x200)
+				{
+					carry = addcarry(1    , p_val[0]        , 0, p_val.data() + 0);
+					carry = addcarry(carry, p_val[1]        , 0, p_val.data() + 1);
+					carry = addcarry(carry, p_val[2]        , 0, p_val.data() + 2);
+					carry = addcarry(carry, p_val[3]        , 0, p_val.data() + 3);
+					carry = addcarry(carry, p_val[4]        , 0, p_val.data() + 4);
+					carry = addcarry(carry, p_val[5]        , 0, p_val.data() + 5);
+					carry = addcarry(carry, p_val[6]        , 0, p_val.data() + 6);
+					carry = addcarry(carry, p_val[7]        , 0, p_val.data() + 7);
+					        addcarry(carry, p_val[8] & 0x1FF, 0, p_val.data() + 8);
+				}
+			}
+		}
+
+		static void mod_multiply(block_t& p_out, const block_t& p_1, const block_t& p_2)
+		{
+			//TODO
+			std::array<uint64_t, 17> temp;
+
+			//======== Multiply ========
+			{
+				uint64_t mul_carry;
+				uint64_t mul_carry_2;
+				uint64_t acum;
+				std::array<uint8_t, 8> lcarry;
+				std::array<uint8_t, 7> Dcarry;
+
+				//Block 0
+				temp[0] = umul(p_1[0], p_2[0], &mul_carry);
+
+
+				//Block 1
+				lcarry[0] =
+					addcarry(0,
+						mul_carry,
+						umul(p_1[0], p_2[1], &mul_carry_2),
+						&acum);
+
+				lcarry[1] =
+					addcarry(0,
+						acum,
+						umul(p_1[1], p_2[0], &mul_carry),
+						temp.data() + 1);
+
+				//--
+				Dcarry[0] =
+					addcarry(lcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+
+				//Block 2
+				lcarry[0] =
+					addcarry(lcarry[1],
+						mul_carry,
+						umul(p_1[0], p_2[2], &mul_carry_2),
+						&acum);
+
+				lcarry[1] =
+					addcarry(0,
+						acum,
+						umul(p_1[1], p_2[1], &mul_carry),
+						&acum);
+
+				Dcarry[0] =
+					addcarry(Dcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[2] =
+					addcarry(0,
+						acum,
+						umul(p_1[2], p_2[0], &mul_carry_2),
+						temp.data() + 2);
+
+				//--
+				Dcarry[1] =
+					addcarry(lcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+
+				//Block 3
+				lcarry[0] =
+					addcarry(lcarry[1],
+						mul_carry,
+						umul(p_1[0], p_2[3], &mul_carry_2),
+						&acum);
+
+				lcarry[1] =
+					addcarry(lcarry[2],
+						acum,
+						umul(p_1[1], p_2[2], &mul_carry),
+						&acum);
+
+				Dcarry[0] =
+					addcarry(Dcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[2] =
+					addcarry(0,
+						acum,
+						umul(p_1[2], p_2[1], &mul_carry_2),
+						&acum);
+
+				Dcarry[1] =
+					addcarry(Dcarry[1], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[3] =
+					addcarry(0,
+						acum,
+						umul(p_1[3], p_2[0], &mul_carry_2),
+						temp.data() + 3);
+
+				//--
+				Dcarry[2] =
+					addcarry(lcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+
+				//Block 4
+				lcarry[0] =
+					addcarry(lcarry[1],
+						mul_carry,
+						umul(p_1[0], p_2[4], &mul_carry_2),
+						&acum);
+
+				lcarry[1] =
+					addcarry(lcarry[2],
+						acum,
+						umul(p_1[1], p_2[3], &mul_carry),
+						&acum);
+
+				Dcarry[0] =
+					addcarry(Dcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[2] =
+					addcarry(lcarry[3],
+						acum,
+						umul(p_1[2], p_2[2], &mul_carry_2),
+						&acum);
+
+				Dcarry[1] =
+					addcarry(Dcarry[1], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[3] =
+					addcarry(0,
+						acum,
+						umul(p_1[3], p_2[1], &mul_carry_2),
+						&acum);
+
+				Dcarry[2] =
+					addcarry(Dcarry[2], mul_carry, mul_carry_2, &mul_carry);
+
+
+				lcarry[4] =
+					addcarry(0,
+						acum,
+						umul(p_1[4], p_2[0], &mul_carry_2),
+						temp.data() + 4);
+
+				//--
+				Dcarry[3] =
+					addcarry(lcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+
+				//Block 5
+				lcarry[0] =
+					addcarry(lcarry[1],
+						mul_carry,
+						umul(p_1[0], p_2[5], &mul_carry_2),
+						&acum);
+
+				lcarry[1] =
+					addcarry(lcarry[2],
+						acum,
+						umul(p_1[1], p_2[4], &mul_carry),
+						&acum);
+
+				Dcarry[0] =
+					addcarry(Dcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[2] =
+					addcarry(lcarry[3],
+						acum,
+						umul(p_1[2], p_2[3], &mul_carry_2),
+						&acum);
+
+				Dcarry[1] =
+					addcarry(Dcarry[1], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[3] =
+					addcarry(lcarry[4],
+						acum,
+						umul(p_1[3], p_2[2], &mul_carry_2),
+						&acum);
+
+				Dcarry[2] =
+					addcarry(Dcarry[2], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[4] =
+					addcarry(0,
+						acum,
+						umul(p_1[4], p_2[1], &mul_carry_2),
+						&acum);
+
+				Dcarry[3] =
+					addcarry(Dcarry[3], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[5] =
+					addcarry(0,
+						acum,
+						umul(p_1[5], p_2[0], &mul_carry_2),
+						temp.data() + 5);
+
+				//--
+				Dcarry[4] =
+					addcarry(lcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+
+				//Block 6
+				lcarry[0] =
+					addcarry(lcarry[1],
+						mul_carry,
+						umul(p_1[0], p_2[6], &mul_carry_2),
+						&acum);
+
+				lcarry[1] =
+					addcarry(lcarry[2],
+						acum,
+						umul(p_1[1], p_2[5], &mul_carry),
+						&acum);
+
+				Dcarry[0] =
+					addcarry(Dcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[2] =
+					addcarry(lcarry[3],
+						acum,
+						umul(p_1[2], p_2[4], &mul_carry_2),
+						&acum);
+
+				Dcarry[1] =
+					addcarry(Dcarry[1], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[3] =
+					addcarry(lcarry[4],
+						acum,
+						umul(p_1[3], p_2[3], &mul_carry_2),
+						&acum);
+
+				Dcarry[2] =
+					addcarry(Dcarry[2], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[4] =
+					addcarry(lcarry[5],
+						acum,
+						umul(p_1[4], p_2[2], &mul_carry_2),
+						&acum);
+
+				Dcarry[3] =
+					addcarry(Dcarry[3], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[5] =
+					addcarry(0,
+						acum,
+						umul(p_1[5], p_2[1], &mul_carry_2),
+						&acum);
+
+				Dcarry[4] =
+					addcarry(Dcarry[4], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[6] =
+					addcarry(0,
+						acum,
+						umul(p_1[6], p_2[0], &mul_carry_2),
+						temp.data() + 6);
+
+				//--
+				Dcarry[5] =
+					addcarry(lcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+
+				//Block 7
+				lcarry[0] =
+					addcarry(lcarry[1],
+						mul_carry,
+						umul(p_1[0], p_2[7], &mul_carry_2),
+						&acum);
+
+				lcarry[1] =
+					addcarry(lcarry[2],
+						acum,
+						umul(p_1[1], p_2[6], &mul_carry),
+						&acum);
+
+				Dcarry[0] =
+					addcarry(Dcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[2] =
+					addcarry(lcarry[3],
+						acum,
+						umul(p_1[2], p_2[5], &mul_carry_2),
+						&acum);
+
+				Dcarry[1] =
+					addcarry(Dcarry[1], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[3] =
+					addcarry(lcarry[4],
+						acum,
+						umul(p_1[3], p_2[4], &mul_carry_2),
+						&acum);
+
+				Dcarry[2] =
+					addcarry(Dcarry[2], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[4] =
+					addcarry(lcarry[5],
+						acum,
+						umul(p_1[4], p_2[3], &mul_carry_2),
+						&acum);
+
+				Dcarry[3] =
+					addcarry(Dcarry[3], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[5] =
+					addcarry(lcarry[6],
+						acum,
+						umul(p_1[5], p_2[2], &mul_carry_2),
+						&acum);
+
+				Dcarry[4] =
+					addcarry(Dcarry[4], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[6] =
+					addcarry(0,
+						acum,
+						umul(p_1[6], p_2[1], &mul_carry_2),
+						&acum);
+
+				Dcarry[5] =
+					addcarry(Dcarry[5], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[7] =
+					addcarry(0,
+						acum,
+						umul(p_1[7], p_2[0], &mul_carry_2),
+						temp.data() + 7);
+
+				//--
+				Dcarry[6] =
+					addcarry(lcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+
+				//Block 8
+
+
+
+
+
+
+
+
+
+
+			}
+
+		}
+
+	//	static void mod_square(block_t& p_out, const block_t& p_in)
 	//	{
 	//		//TODO
 	//
-	//
-	//
-	//
+	//	}
+
+	//	//uses eulers theorem which for primes inv(a) = a^(p-2) mod p
+	//	static void mod_inverse(block_t& p_val)
+	//	{
+	//		//TODO
 	//
 	//	}
+
+	//	static void ED_point_add(const projective_point_t& p_1, projective_point_t& p_out)
+	//	{
+	//		//TODO
+	//
+	//	}
+
+	//	static void ED_point_double(projective_point_t& p_point)
+	//	{
+	//		//TODO
+	//
+	//	}
+
 
 
 	};

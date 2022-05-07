@@ -73,7 +73,7 @@ namespace crypto
 	class Ed521
 	{
 	public:
-		static constexpr uintptr_t key_lenght  = 65;
+		static constexpr uintptr_t key_lenght  = 66;
 
 		using key_t   = std::array<uint8_t, key_lenght>;
 		using coord_t = std::array<uint64_t, 9>;
