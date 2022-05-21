@@ -169,3 +169,59 @@ TEST(codec_asymmetric, ED25519_compress_roundtrip)
 		<< "\nRound-trip: " << '{' << testPrint{expanded.m_x} << "; " << testPrint{expanded.m_y} << '}'
 		<< "\nSecret    : " << testPrint{secret1};
 }
+
+TEST(codec_asymmetric, ED521_key_agreement)
+{
+	std::random_device rd;  //Will be used to obtain a seed for the random number engine
+	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+	std::uniform_int_distribution<uint64_t> distrib(0, std::numeric_limits<uint64_t>::max());
+
+	alignas(8) crypto::Ed521::key_t secret1;
+	alignas(8) crypto::Ed521::key_t secret2;
+
+	using alias_t = std::array<uint64_t, 8>;
+	{
+		alias_t& temp = reinterpret_cast<alias_t&>(secret1);
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+		temp[4] = distrib(gen);
+		temp[5] = distrib(gen);
+		temp[6] = distrib(gen);
+		temp[7] = distrib(gen);
+		reinterpret_cast<uint16_t&>(secret1[64]) = static_cast<uint16_t>(distrib(gen));
+	}
+
+	{
+		alias_t& temp = reinterpret_cast<alias_t&>(secret2);
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+		temp[4] = distrib(gen);
+		temp[5] = distrib(gen);
+		temp[6] = distrib(gen);
+		temp[7] = distrib(gen);
+		reinterpret_cast<uint16_t&>(secret2[64]) = static_cast<uint16_t>(distrib(gen));
+	}
+
+	crypto::Ed521::point_t pub1;
+	crypto::Ed521::public_key(secret1, pub1);
+
+	crypto::Ed521::point_t pub2;
+	crypto::Ed521::public_key(secret2, pub2);
+
+	crypto::Ed521::point_t shared1;
+	crypto::Ed521::point_t shared2;
+
+	crypto::Ed521::composite_key(secret1, pub2, shared1);
+	crypto::Ed521::composite_key(secret2, pub1, shared2);
+
+	const bool result = (memcmp(&shared1, &shared2, sizeof(crypto::Ed521::point_t)) == 0);
+	ASSERT_TRUE(result)
+		<< "\nShared 1: " << '{' << testPrint{shared1.m_x} << "; " << testPrint{shared1.m_y} << '}'
+		<< "\nShared 2: " << '{' << testPrint{shared2.m_x} << "; " << testPrint{shared2.m_y} << '}'
+		<< "\nSecret 1: " << testPrint{secret1}
+		<< "\nSecret 2: " << testPrint{secret2};
+}

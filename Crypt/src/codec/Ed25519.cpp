@@ -457,6 +457,7 @@ namespace crypto
 			}
 		}
 
+
 		static void mod_multiply(block_t& p_out, const block_t& p_1, const block_t& p_2)
 		{
 			std::array<uint64_t, 8> temp;
@@ -467,41 +468,40 @@ namespace crypto
 				uint64_t mul_carry_2;
 				uint64_t acum;
 				std::array<uint8_t, 4> lcarry;
-				std::array<uint8_t, 3> Dcarry;
+				std::array<uint8_t, 2> Dcarry;
 
 				//Block 0
 				temp[0] = umul(p_1[0], p_2[0], &mul_carry);
 
-
 				//Block 1
 				lcarry[0] =
 					addcarry(0,
-						mul_carry,
 						umul(p_1[0], p_2[1], &mul_carry_2),
+						mul_carry,
 						&acum);
 
 				lcarry[1] =
 					addcarry(0,
-						acum,
 						umul(p_1[1], p_2[0], &mul_carry),
-						temp.data() + 1);
+						acum,
+						&(temp[1]));
 
 				//--
 				Dcarry[0] =
-					addcarry(lcarry[0], mul_carry, mul_carry_2, &mul_carry);
+					addcarry(0, mul_carry, mul_carry_2, &mul_carry);
 
 
 				//Block 2
 				lcarry[0] =
-					addcarry(lcarry[1],
-						mul_carry,
+					addcarry(lcarry[0],
 						umul(p_1[0], p_2[2], &mul_carry_2),
+						mul_carry,
 						&acum);
 
 				lcarry[1] =
-					addcarry(0,
-						acum,
+					addcarry(lcarry[1],
 						umul(p_1[1], p_2[1], &mul_carry),
+						acum,
 						&acum);
 
 				Dcarry[0] =
@@ -509,212 +509,218 @@ namespace crypto
 
 				lcarry[2] =
 					addcarry(0,
-						acum,
 						umul(p_1[2], p_2[0], &mul_carry_2),
-						temp.data() + 2);
+						acum,
+						&(temp[2]));
 
 				//--
 				Dcarry[1] =
-					addcarry(lcarry[0], mul_carry, mul_carry_2, &mul_carry);
+					addcarry(0, mul_carry, mul_carry_2, &mul_carry);
 
 
 				//Block 3
 				lcarry[0] =
-					addcarry(lcarry[1],
-						mul_carry,
+					addcarry(lcarry[0],
 						umul(p_1[0], p_2[3], &mul_carry_2),
+						mul_carry,
 						&acum);
 
 				lcarry[1] =
-					addcarry(lcarry[2],
+					addcarry(lcarry[1],
+						umul(p_1[3], p_2[0], &mul_carry),
 						acum,
-						umul(p_1[1], p_2[2], &mul_carry),
+						&acum);
+
+				addcarry(Dcarry[1], mul_carry, mul_carry_2, &mul_carry);
+
+				lcarry[2] =
+					addcarry(lcarry[2],
+						umul(p_1[1], p_2[2], &mul_carry_2),
+						acum,
 						&acum);
 
 				Dcarry[0] =
 					addcarry(Dcarry[0], mul_carry, mul_carry_2, &mul_carry);
 
-				lcarry[2] =
-					addcarry(0,
-						acum,
-						umul(p_1[2], p_2[1], &mul_carry_2),
-						&acum);
-
-				Dcarry[1] =
-					addcarry(Dcarry[1], mul_carry, mul_carry_2, &mul_carry);
-
 				lcarry[3] =
 					addcarry(0,
+						umul(p_1[2], p_2[1], &mul_carry_2),
 						acum,
-						umul(p_1[3], p_2[0], &mul_carry_2),
-						temp.data() + 3);
+						&(temp[3]));
 
 				//--
-				Dcarry[2] =
-					addcarry(lcarry[0], mul_carry, mul_carry_2, &mul_carry);
+				Dcarry[1] =
+					addcarry(lcarry[3], mul_carry, mul_carry_2, &mul_carry);
 
 
 				//Block 4
 				lcarry[0] =
-					addcarry(lcarry[1],
-						mul_carry,
+					addcarry(lcarry[0],
 						umul(p_1[1], p_2[3], &mul_carry_2),
+						mul_carry,
 						&acum);
 
 				lcarry[1] =
-					addcarry(lcarry[2],
+					addcarry(lcarry[1],
+						umul(p_1[3], p_2[1], &mul_carry),
 						acum,
-						umul(p_1[2], p_2[2], &mul_carry),
 						&acum);
 
-				Dcarry[0] =
-					addcarry(Dcarry[0], mul_carry + lcarry[0], mul_carry_2, &mul_carry);
+				addcarry(Dcarry[1], mul_carry, mul_carry_2, &mul_carry);
 
 				lcarry[2] =
-					addcarry(lcarry[3],
+					addcarry(lcarry[2],
+						umul(p_1[2], p_2[2], &mul_carry_2),
 						acum,
-						umul(p_1[3], p_2[1], &mul_carry_2),
-						temp.data() + 4);
+						&(temp[4]));
 
 				//--
-				Dcarry[1] =
-					addcarry(Dcarry[1], mul_carry, mul_carry_2 + Dcarry[2], &mul_carry);
+				Dcarry[0] =
+					addcarry(Dcarry[0], mul_carry, mul_carry_2 + lcarry[2], &mul_carry);
 
 
 				//Block 5
 				lcarry[0] =
-					addcarry(lcarry[1],
-						mul_carry,
+					addcarry(lcarry[0],
 						umul(p_1[2], p_2[3], &mul_carry_2),
+						mul_carry,
 						&acum);
 
 				lcarry[1] =
-					addcarry(lcarry[2],
-						acum,
+					addcarry(lcarry[1],
 						umul(p_1[3], p_2[2], &mul_carry),
-						temp.data() + 5);
+						acum,
+						&(temp[5]));
 
 				//--
-				Dcarry[0] =
-					addcarry(Dcarry[0], mul_carry + lcarry[0], mul_carry_2 + Dcarry[1], &mul_carry);
-
+				addcarry(Dcarry[0], mul_carry, mul_carry_2 + lcarry[1], &mul_carry);
 
 				//Block 6
 				lcarry[0] =
-					addcarry(lcarry[1],
+					addcarry(lcarry[0],
+						umul(p_1[3], p_2[3], &(temp[7])),
 						mul_carry,
-						umul(p_1[3], p_2[3], &mul_carry_2),
-						temp.data() + 6);
+						&(temp[6]));
 
 
 				//Block 7
-				addcarry(Dcarry[0], mul_carry_2, lcarry[0], temp.data() + 7);
+				temp[7] += lcarry[0];
 			}
 
 			mul_reduce(temp);
 			memcpy(p_out.data(), temp.data(), sizeof(block_t));
 		}
 
+
 		static void mod_square(block_t& p_out, const block_t& p_in)
 		{
 			std::array<uint64_t, 8> temp;
 
-			uint64_t mul_carry;
-			uint64_t mul_carry_2;
-			uint64_t mul_carry_3;
-			uint64_t acum;
-			uint8_t lcarry_A;
-			uint8_t lcarry_B;
+			//======== Square ========
+			{
+				uint64_t mul_carry;
+				uint8_t lcarry;
+				uint8_t lcarry_2;
+				uint8_t Dcarry;
 
-			uint8_t lcarry_2A;
-			uint8_t lcarry_2B;
+				//double blocks
 
+				//Block 0
+				//Block 1
+				temp[1] = umul(p_in[0], p_in[1], &(temp[2]));
 
-			//Block 0
-			temp[0] = umul(p_in[0], p_in[0], &mul_carry);
+				//Block 2
+				lcarry =
+					addcarry(0,
+						umul(p_in[0], p_in[2], &(temp[3])),
+						temp[2],
+						&(temp[2]));
 
-			//Block 1
-			acum = umul(p_in[0], p_in[1], &mul_carry_2);
-			lcarry_A = addcarry(0, acum, acum, &acum);
-			lcarry_B = addcarry(0, acum, mul_carry, temp.data() + 1);
+				//Block 3
+				lcarry =
+					addcarry(lcarry,
+						umul(p_in[0], p_in[3], &(temp[4])),
+						temp[3],
+						&(temp[3]));
 
-			//Block 2
-			lcarry_2A =
-				addcarry(
-					0,
-					mul_carry_2,
-					umul(p_in[0], p_in[2], &mul_carry),
-					&acum);
+				lcarry_2 =
+					addcarry(0,
+						umul(p_in[1], p_in[2], &mul_carry),
+						temp[3],
+						&(temp[3]));
 
-			lcarry_A = addcarry(lcarry_A, acum, acum, &acum);
+				//--
+				Dcarry =
+					addcarry(lcarry_2, temp[4], mul_carry, &(temp[4]));
 
-			lcarry_B =
-				addcarry(
-					lcarry_B,
-					acum,
-					umul(p_in[1], p_in[1], &mul_carry_2),
-					temp.data() + 2);
+				//Block 4
+				lcarry =
+					addcarry(lcarry,
+						umul(p_in[1], p_in[3], &(temp[5])),
+						temp[4],
+						&(temp[4]));
 
-			//Block 3
-			lcarry_2A =
-				addcarry(
-					lcarry_2A,
-					mul_carry,
-					umul(p_in[0], p_in[3], &mul_carry_3),
-					&acum);
+				//Block 5
+				lcarry =
+					addcarry(lcarry,
+						umul(p_in[2], p_in[3], &(temp[6])),
+						temp[5] + Dcarry,
+						&(temp[5]));
 
-			lcarry_2B =
-				addcarry(
-					0,
-					acum,
-					umul(p_in[1], p_in[2], &mul_carry),
-					&acum);
+				//Block 6
+				temp[6] += lcarry;
+				
+				//Block 7
 
-			lcarry_A = addcarry(lcarry_A, acum, acum, &acum);
-			lcarry_B = addcarry(lcarry_B, acum, mul_carry_2, temp.data() + 3);
+				//== Doubling ==
+				lcarry = addcarry(0     , temp[1], temp[1], &(temp[1]));
+				lcarry = addcarry(lcarry, temp[2], temp[2], &(temp[2]));
+				lcarry = addcarry(lcarry, temp[3], temp[3], &(temp[3]));
+				lcarry = addcarry(lcarry, temp[4], temp[4], &(temp[4]));
+				lcarry = addcarry(lcarry, temp[5], temp[5], &(temp[5]));
+				lcarry = addcarry(lcarry, temp[6], temp[6], &(temp[6]));
 
+				//single blocks
+				//Block 0
+				temp[0] = umul(p_in[0], p_in[0], &mul_carry);
+				
+				//Block 1
+				lcarry = addcarry(0, temp[1], mul_carry, &(temp[1]));
 
-			//Block 4
-			lcarry_2A =
-				addcarry(
-					lcarry_2A,
-					mul_carry,
-					umul(p_in[1], p_in[3], &mul_carry_2),
-					&acum);
+				//Block 2
+				lcarry =
+					addcarry(
+						lcarry,
+						umul(p_in[1], p_in[1], &mul_carry),
+						temp[2],
+						&(temp[2]));
+				
+				//Block 3
+				lcarry = addcarry(lcarry, temp[3], mul_carry, &(temp[3]));
 
-			lcarry_2B = addcarry(lcarry_2B, acum, mul_carry_3, &acum);
-			lcarry_A  = addcarry(lcarry_A, acum, acum, &acum);
+				//Block 4
+				lcarry =
+					addcarry(
+						lcarry,
+						umul(p_in[2], p_in[2], &mul_carry),
+						temp[4],
+						&(temp[4]));
 
-			lcarry_B = addcarry(
-				lcarry_B,
-				umul(p_in[2], p_in[2], &mul_carry),
-				acum,
-				temp.data() + 4);
+				//Block 5
+				lcarry = addcarry(lcarry, temp[5], mul_carry, &(temp[5]));
 
+				//Block 6
+				lcarry =
+					addcarry(
+						lcarry,
+						umul(p_in[3], p_in[3], &(temp[7])),
+						temp[6],
+						&(temp[6]));
 
-			//Block 5
-			lcarry_2A =
-				addcarry(
-					lcarry_2A,
-					umul(p_in[2], p_in[3], &mul_carry_3),
-					mul_carry_2 + lcarry_2B,
-					&acum);
+				//Block 7
+				temp[7] += lcarry;
 
-			lcarry_A = addcarry(lcarry_A, acum, acum, &acum);
-			lcarry_B = addcarry(lcarry_B, acum, mul_carry, temp.data() + 5);
-
-			//Block 6
-			lcarry_A =
-				addcarry(lcarry_A,
-					mul_carry_3 + lcarry_2A,
-					umul(p_in[3], p_in[3], &mul_carry),
-					&acum);
-
-			lcarry_B = addcarry(lcarry_B, acum, mul_carry_3 + lcarry_2A, temp.data() + 6);
-
-			//Block 7
-			addcarry(lcarry_A, mul_carry, lcarry_B, temp.data() + 7);
-
+			}
 			mul_reduce(temp);
 			memcpy(p_out.data(), temp.data(), sizeof(block_t));
 		}
@@ -953,9 +959,6 @@ namespace crypto
 
 	void Ed25519::composite_key(std::span<const uint8_t, key_lenght> p_private_key, const point_t& p_public_key, point_t& p_shared_key)
 	{
-		//TODO: Mod private key in relation to the order
-
-
 		using block_t = Curve_25519::block_t;
 		//using projective coordinates
 		//x = X/Z, y = Y/Z, x * y = T/Z

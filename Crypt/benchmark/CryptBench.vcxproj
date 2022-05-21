@@ -59,6 +59,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\codec\bench_AES.cpp" />
+    <ClCompile Include="src\codec\bench_ECC.cpp" />
   </ItemGroup>
   <Import Project="$(quickMSBuildPath)default.cpp.targets" />
 </Project>

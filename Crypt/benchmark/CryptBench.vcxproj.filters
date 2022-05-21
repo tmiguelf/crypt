@@ -21,5 +21,8 @@
     <ClCompile Include="src\codec\bench_AES.cpp">
       <Filter>Source Files\codec</Filter>
     </ClCompile>
+    <ClCompile Include="src\codec\bench_ECC.cpp">
+      <Filter>Source Files\codec</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

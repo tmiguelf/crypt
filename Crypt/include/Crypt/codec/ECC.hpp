@@ -84,9 +84,13 @@ namespace crypto
 			coord_t m_y;
 		};
 
+		//static void reduce_private_key(std::span<uint8_t, key_lenght> p_private_key);
 
+		static void public_key(std::span<const uint8_t, key_lenght> p_private_key, point_t& p_public_key);
+		static void composite_key(std::span<const uint8_t, key_lenght> p_private_key, const point_t& p_public_key, point_t& p_shared_key);
 
-
+		//static void key_compress(const point_t& p_public_key, std::span<uint8_t, key_lenght> p_compressed_key);
+		//static bool key_expand  (const std::span<const uint8_t, key_lenght> p_compressed_key, point_t& p_public_key);
 	};
 
 } //namespace crypto
