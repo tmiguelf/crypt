@@ -39,6 +39,7 @@
 
 #include <test_utils.hpp>
 
+#include "../../../src/codec/Ed521.cpp"
 
 TEST(codec_asymmetric, ED25519_gen_public)
 {

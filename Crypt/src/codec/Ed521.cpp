@@ -90,7 +90,7 @@ namespace crypto
 			0xFFFFFFFFFFFFFFFF_ui64,
 			0xFFFFFFFFFFFFFFFF_ui64,
 			0xFFFFFFFFFFFFFFFF_ui64,
-			0x000000000001FFFF_ui64,
+			0x00000000000001FF_ui64,
 		};
 
 		static constexpr coord_t X
@@ -121,26 +121,6 @@ namespace crypto
 
 
 		static constexpr point_t generator{X, Y};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 		static bool compare_equal(const block_t& p_1, const block_t& p_2)
 		{
@@ -238,7 +218,7 @@ namespace crypto
 			}
 
 			//mod
-			if(p_out[8] & 0x100_ui64)
+			if(p_out[8] & 0x200_ui64)
 			{
 				uint8_t borrow;
 				borrow = subborrow(0     , p_out[0], prime_base  , p_out.data() + 0);
@@ -415,8 +395,30 @@ namespace crypto
 					carry = addcarry(carry, p_val[6]        , 0, p_val.data() + 6);
 					carry = addcarry(carry, p_val[7]        , 0, p_val.data() + 7);
 					        addcarry(carry, p_val[8] & 0x1FF, 0, p_val.data() + 8);
+					if(p_val[8] & 0x200)
+					{
+						p_val[0] = 1;
+						p_val[8] = 0;
+					}
+					return;
 				}
 			}
+
+			if
+			(
+				p_val[0] == prime_base &&
+				p_val[1] == prime_base &&
+				p_val[2] == prime_base &&
+				p_val[3] == prime_base &&
+				p_val[4] == prime_base &&
+				p_val[6] == prime_base &&
+				p_val[7] == prime_base &&
+				p_val[8] == prime_base_l
+			)
+			{
+				memset(p_val.data(), 0, sizeof(block_t));
+			}
+
 		}
 
 		static void mod_multiply(block_t& p_out, const block_t& p_1, const block_t& p_2)
@@ -1488,7 +1490,7 @@ namespace crypto
 				lcarry = addcarry(lcarry, temp[13], temp[13], &(temp[13]));
 				lcarry = addcarry(lcarry, temp[14], temp[14], &(temp[14]));
 				lcarry = addcarry(lcarry, temp[15], temp[15], &(temp[15]));
-				lcarry = addcarry(lcarry, temp[16], temp[16], &(temp[16]));
+				addcarry(lcarry, temp[16], temp[16], &(temp[16]));
 
 				//single blocks
 				//Block 0
@@ -1575,15 +1577,11 @@ namespace crypto
 				lcarry = addcarry(lcarry, temp[15], mul_carry, &(temp[15]));
 
 				//Block 16
-				lcarry =
-					addcarry(
-						lcarry,
-						umul(p_in[8], p_in[8], &(temp[17])),
-						temp[16],
-						&(temp[16]));
-
-				//Block 17
-				temp[17] += lcarry;
+				addcarry(
+					lcarry,
+					umul(p_in[8], p_in[8], &mul_carry),
+					temp[16],
+					&(temp[16]));
 			}
 			mul_reduce(temp);
 			memcpy(p_out.data(), temp.data(), sizeof(block_t));
@@ -1599,7 +1597,6 @@ namespace crypto
 			memcpy(accum.data(), p_val.data(), sizeof(block_t));
 
 			mod_square(k0, accum);
-
 
 			{
 				block_t temp;
@@ -1719,34 +1716,36 @@ namespace crypto
 				mod_multiply(tC, p_1.m_x, p_out.m_x);
 				mod_multiply(tD, p_1.m_y, p_out.m_y);
 
-				mod_multiply(E, tD, D);
-				mod_multiply(E, E, tC);
+				mod_multiply(E, tD, tC);
+				mod_multiply(E, E, D);
 
-				memcpy(F.data(), E.data(), sizeof(block_t));
-				mod_negate(F);
-				mod_add(F, F, tB);
 				mod_add(H, tB, E);
+				mod_negate(E);
+				mod_add(F, tB, E);
 			}
+
+			mod_multiply(p_out.m_z, F, H);
+
 			block_t aux1;
+
+			mod_negate(tC);
+			mod_add(aux1, tD, tC);
+			mod_multiply(aux1, aux1, H);
+			mod_multiply(p_out.m_y, aux1, tA);
+
 			block_t aux2;
 
 			mod_add(aux1, p_1.m_x, p_1.m_y);
 			mod_add(aux2, p_out.m_x, p_out.m_y);
 			mod_multiply(aux1, aux1, aux2);
 
-			mod_add(aux1, aux1, tC);
-
+			mod_inverse(tD);
 			mod_add(aux2, tC, tD);
 
-			mod_negate(tD);
-			mod_add(aux1, aux1, tD);
-			mod_multiply(aux1, aux1, tA);
-			mod_multiply(p_out.m_x, aux1, F);
+			mod_add(aux1, aux1, aux2);
 
-			mod_multiply(aux2, aux2, H);
-			mod_multiply(p_out.m_y, aux2, tA);
-
-			mod_multiply(p_out.m_z, F, H);
+			mod_multiply(aux1, aux1, F);
+			mod_multiply(p_out.m_x, aux1, tA);
 		}
 
 		static void ED_point_double(projective_point_t& p_point)
@@ -1776,16 +1775,17 @@ namespace crypto
 			mod_add(E, tC, tD);
 			mod_square(H, p_point.m_z);
 
-			mod_add(H, H, H);
+			mod_double(H);
 			mod_negate(H);
 
 			mod_add(J, E, H);
+			mod_multiply(p_point.m_z, E, J);
+
 
 			mod_negate(tD);
 			mod_add(tD, tD, tC);
 			mod_multiply(p_point.m_y, E, tD);
-			mod_multiply(p_point.m_z, E, J);
-			
+
 			mod_negate(E);
 			mod_add(tB, tB, E);
 			mod_multiply(p_point.m_x, tB, J);
