@@ -181,56 +181,30 @@ TEST(codec_asymmetric, ED521_key_agreement)
 	alignas(8) crypto::Ed521::key_t secret2;
 
 	using alias_t = std::array<uint64_t, 8>;
-//	{
-//		alias_t& temp = reinterpret_cast<alias_t&>(secret1);
-//		temp[0] = distrib(gen);
-//		temp[1] = distrib(gen);
-//		temp[2] = distrib(gen);
-//		temp[3] = distrib(gen);
-//		temp[4] = distrib(gen);
-//		temp[5] = distrib(gen);
-//		temp[6] = distrib(gen);
-//		temp[7] = distrib(gen);
-//		reinterpret_cast<uint16_t&>(secret1[64]) = static_cast<uint16_t>(distrib(gen));
-//	}
-//
-//	{
-//		alias_t& temp = reinterpret_cast<alias_t&>(secret2);
-//		temp[0] = distrib(gen);
-//		temp[1] = distrib(gen);
-//		temp[2] = distrib(gen);
-//		temp[3] = distrib(gen);
-//		temp[4] = distrib(gen);
-//		temp[5] = distrib(gen);
-//		temp[6] = distrib(gen);
-//		temp[7] = distrib(gen);
-//		reinterpret_cast<uint16_t&>(secret2[64]) = static_cast<uint16_t>(distrib(gen));
-//	}
-
 	{
 		alias_t& temp = reinterpret_cast<alias_t&>(secret1);
-		temp[0] = 1;
-		temp[1] = 0;
-		temp[2] = 0;
-		temp[3] = 0;
-		temp[4] = 0;
-		temp[5] = 0;
-		temp[6] = 0;
-		temp[7] = 0;
-		reinterpret_cast<uint16_t&>(secret1[64]) = 0;
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+		temp[4] = distrib(gen);
+		temp[5] = distrib(gen);
+		temp[6] = distrib(gen);
+		temp[7] = distrib(gen);
+		reinterpret_cast<uint16_t&>(secret1[64]) = static_cast<uint16_t>(distrib(gen));
 	}
 
 	{
 		alias_t& temp = reinterpret_cast<alias_t&>(secret2);
-		temp[0] = 2;
-		temp[1] = 0;
-		temp[2] = 0;
-		temp[3] = 0;
-		temp[4] = 0;
-		temp[5] = 0;
-		temp[6] = 0;
-		temp[7] = 0;
-		reinterpret_cast<uint16_t&>(secret2[64]) = 0;
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+		temp[4] = distrib(gen);
+		temp[5] = distrib(gen);
+		temp[6] = distrib(gen);
+		temp[7] = distrib(gen);
+		reinterpret_cast<uint16_t&>(secret2[64]) = static_cast<uint16_t>(distrib(gen));
 	}
 
 	crypto::Ed521::point_t pub1;
