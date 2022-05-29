@@ -181,30 +181,56 @@ TEST(codec_asymmetric, ED521_key_agreement)
 	alignas(8) crypto::Ed521::key_t secret2;
 
 	using alias_t = std::array<uint64_t, 8>;
+//	{
+//		alias_t& temp = reinterpret_cast<alias_t&>(secret1);
+//		temp[0] = distrib(gen);
+//		temp[1] = distrib(gen);
+//		temp[2] = distrib(gen);
+//		temp[3] = distrib(gen);
+//		temp[4] = distrib(gen);
+//		temp[5] = distrib(gen);
+//		temp[6] = distrib(gen);
+//		temp[7] = distrib(gen);
+//		reinterpret_cast<uint16_t&>(secret1[64]) = static_cast<uint16_t>(distrib(gen));
+//	}
+//
+//	{
+//		alias_t& temp = reinterpret_cast<alias_t&>(secret2);
+//		temp[0] = distrib(gen);
+//		temp[1] = distrib(gen);
+//		temp[2] = distrib(gen);
+//		temp[3] = distrib(gen);
+//		temp[4] = distrib(gen);
+//		temp[5] = distrib(gen);
+//		temp[6] = distrib(gen);
+//		temp[7] = distrib(gen);
+//		reinterpret_cast<uint16_t&>(secret2[64]) = static_cast<uint16_t>(distrib(gen));
+//	}
+
 	{
 		alias_t& temp = reinterpret_cast<alias_t&>(secret1);
-		temp[0] = distrib(gen);
-		temp[1] = distrib(gen);
-		temp[2] = distrib(gen);
-		temp[3] = distrib(gen);
-		temp[4] = distrib(gen);
-		temp[5] = distrib(gen);
-		temp[6] = distrib(gen);
-		temp[7] = distrib(gen);
-		reinterpret_cast<uint16_t&>(secret1[64]) = static_cast<uint16_t>(distrib(gen));
+		temp[0] = 1;
+		temp[1] = 0;
+		temp[2] = 0;
+		temp[3] = 0;
+		temp[4] = 0;
+		temp[5] = 0;
+		temp[6] = 0;
+		temp[7] = 0;
+		reinterpret_cast<uint16_t&>(secret1[64]) = 0;
 	}
 
 	{
 		alias_t& temp = reinterpret_cast<alias_t&>(secret2);
-		temp[0] = distrib(gen);
-		temp[1] = distrib(gen);
-		temp[2] = distrib(gen);
-		temp[3] = distrib(gen);
-		temp[4] = distrib(gen);
-		temp[5] = distrib(gen);
-		temp[6] = distrib(gen);
-		temp[7] = distrib(gen);
-		reinterpret_cast<uint16_t&>(secret2[64]) = static_cast<uint16_t>(distrib(gen));
+		temp[0] = 2;
+		temp[1] = 0;
+		temp[2] = 0;
+		temp[3] = 0;
+		temp[4] = 0;
+		temp[5] = 0;
+		temp[6] = 0;
+		temp[7] = 0;
+		reinterpret_cast<uint16_t&>(secret2[64]) = 0;
 	}
 
 	crypto::Ed521::point_t pub1;
@@ -225,4 +251,47 @@ TEST(codec_asymmetric, ED521_key_agreement)
 		<< "\nShared 2: " << '{' << testPrint{shared2.m_x} << "; " << testPrint{shared2.m_y} << '}'
 		<< "\nSecret 1: " << testPrint{secret1}
 		<< "\nSecret 2: " << testPrint{secret2};
+}
+
+TEST(codec_asymmetric, ED521_compress_roundtrip)
+{
+	std::random_device rd;  //Will be used to obtain a seed for the random number engine
+	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+	std::uniform_int_distribution<uint64_t> distrib(0, std::numeric_limits<uint64_t>::max());
+
+	alignas(8) crypto::Ed521::key_t secret1;
+
+	using alias_t = std::array<uint64_t, 8>;
+	{
+		alias_t& temp = reinterpret_cast<alias_t&>(secret1);
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+		temp[4] = distrib(gen);
+		temp[5] = distrib(gen);
+		temp[6] = distrib(gen);
+		temp[7] = distrib(gen);
+		reinterpret_cast<uint16_t&>(secret1[64]) = static_cast<uint16_t>(distrib(gen));
+	}
+
+	crypto::Ed521::point_t pub1;
+	crypto::Ed521::public_key(secret1, pub1);
+
+	crypto::Ed521::key_t compress;
+	crypto::Ed521::point_t expanded;
+
+	crypto::Ed521::key_compress(pub1, compress);
+	{
+		const bool expand_res = crypto::Ed521::key_expand(compress, expanded);
+		ASSERT_TRUE(expand_res)
+			<< "\nOrigin    : " << '{' << testPrint{pub1.m_x} << "; " << testPrint{pub1.m_y} << '}'
+			<< "\nSecret    : " << testPrint{secret1};
+	}
+
+	const bool result = (memcmp(&pub1, &expanded, sizeof(crypto::Ed521::point_t)) == 0);
+	ASSERT_TRUE(result)
+		<< "\nOrigin    : " << '{' << testPrint{pub1.m_x} << "; " << testPrint{pub1.m_y} << '}'
+		<< "\nRound-trip: " << '{' << testPrint{expanded.m_x} << "; " << testPrint{expanded.m_y} << '}'
+		<< "\nSecret    : " << testPrint{secret1};
 }

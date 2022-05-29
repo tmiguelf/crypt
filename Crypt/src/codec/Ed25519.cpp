@@ -1024,10 +1024,12 @@ namespace crypto
 
 	bool Ed25519::key_expand(const std::span<const uint8_t, key_lenght> p_compressed_key, point_t& p_public_key)
 	{
+		using block_t = Curve_25519::block_t;
+
 		memcpy(p_public_key.m_y.data(), p_compressed_key.data(), key_lenght);
 		reinterpret_cast<key_t&>(p_public_key.m_y)[31] &= 0x7F;
 
-		const Curve_25519::block_t& t_y = reinterpret_cast<const Curve_25519::block_t&>(p_public_key.m_y);
+		const block_t& t_y = reinterpret_cast<const block_t&>(p_public_key.m_y);
 
 		const bool x_bit = p_compressed_key[31] & 0x80 ? true : false;
 
@@ -1040,33 +1042,32 @@ namespace crypto
 			return false;
 		}
 
-		Curve_25519::block_t accum;
+		block_t accum;
 		{
-			Curve_25519::block_t u;
-			Curve_25519::block_t v;
+			block_t u;
+			block_t v;
 			{
-				Curve_25519::block_t uv_3;
+				block_t uv_3;
 				{
 					{
-						Curve_25519::block_t y2;
-						Curve_25519::mod_square(y2, t_y);
-						Curve_25519::mod_decrement(u, y2);
+						Curve_25519::mod_square(u, t_y);
 
-						if(Curve_25519::compare_equal(u, {0, 0, 0, 0}))
+						if(Curve_25519::compare_equal(u, {1, 0, 0, 0}))
 						{
 							if(x_bit)
 							{
 								return false;
 							}
-							memset(p_public_key.m_x.data(), 0, key_lenght);
+							memset(p_public_key.m_x.data(), 0, sizeof(block_t));
 							return true;
 						}
 
-						Curve_25519::mod_multiply(y2, y2, Curve_25519::D);
-						Curve_25519::mod_increment(v, y2);
+						Curve_25519::mod_multiply(v, u, Curve_25519::D);
+						Curve_25519::mod_decrement(u, u);
+						Curve_25519::mod_increment(v, v);
 					}
 
-					Curve_25519::block_t v2;
+					block_t v2;
 					Curve_25519::mod_multiply(uv_3, u, v);
 					Curve_25519::mod_square(v2, v);
 					Curve_25519::mod_multiply(uv_3, uv_3, v2);
@@ -1075,8 +1076,8 @@ namespace crypto
 				}
 
 				{
-					Curve_25519::block_t k0;
-					Curve_25519::block_t k1;
+					block_t k0;
+					block_t k1;
 
 					Curve_25519::mod_square(k0, accum);
 					Curve_25519::mod_multiply(k1, accum, k0); //== 2 fill
@@ -1152,7 +1153,7 @@ namespace crypto
 			}
 
 			{
-				Curve_25519::block_t vx2;
+				block_t vx2;
 				Curve_25519::mod_square(vx2, accum);
 				Curve_25519::mod_multiply(vx2, vx2, v);
 				if(!Curve_25519::compare_equal(vx2, u))

@@ -232,14 +232,14 @@ namespace crypto
 				         subborrow(borrow, p_out[8], prime_base_l, p_out.data() + 8);
 			}
 			else if(
-				p_out[0] == prime_base ||
-				p_out[1] == prime_base ||
-				p_out[2] == prime_base ||
-				p_out[3] == prime_base ||
-				p_out[4] == prime_base ||
-				p_out[5] == prime_base ||
-				p_out[6] == prime_base ||
-				p_out[7] == prime_base ||
+				p_out[0] == prime_base &&
+				p_out[1] == prime_base &&
+				p_out[2] == prime_base &&
+				p_out[3] == prime_base &&
+				p_out[4] == prime_base &&
+				p_out[5] == prime_base &&
+				p_out[6] == prime_base &&
+				p_out[7] == prime_base &&
 				p_out[8] == prime_base_l)
 			{
 				memset(p_out.data(), 0, sizeof(block_t));
@@ -1687,7 +1687,6 @@ namespace crypto
 //			mod_multiply(p_val, accum, k);
 		}
 
-
 		static void ED_point_add(const projective_point_t& p_1, projective_point_t& p_out)
 		{
 			//	A = Z1*Z2;
@@ -1711,10 +1710,11 @@ namespace crypto
 				block_t tB;
 				block_t E;
 
-				mod_multiply(tA, p_1.m_z, p_out.m_z);
-				mod_square(tB, tA);
 				mod_multiply(tC, p_1.m_x, p_out.m_x);
 				mod_multiply(tD, p_1.m_y, p_out.m_y);
+				mod_multiply(tA, p_1.m_z, p_out.m_z);
+
+				mod_square(tB, tA);
 
 				mod_multiply(E, tD, tC);
 				mod_multiply(E, E, D);
@@ -1727,22 +1727,21 @@ namespace crypto
 			mod_multiply(p_out.m_z, F, H);
 
 			block_t aux1;
+			block_t aux2;
+
+			mod_add(aux1, p_1.m_x, p_1.m_y);
+			mod_add(aux2, p_out.m_x, p_out.m_y);
+			mod_multiply(aux2, aux2, aux1);
 
 			mod_negate(tC);
 			mod_add(aux1, tD, tC);
 			mod_multiply(aux1, aux1, H);
 			mod_multiply(p_out.m_y, aux1, tA);
 
-			block_t aux2;
 
-			mod_add(aux1, p_1.m_x, p_1.m_y);
-			mod_add(aux2, p_out.m_x, p_out.m_y);
-			mod_multiply(aux1, aux1, aux2);
-
-			mod_inverse(tD);
-			mod_add(aux2, tC, tD);
-
-			mod_add(aux1, aux1, aux2);
+			mod_negate(tD);
+			mod_add(aux1, aux2, tC);
+			mod_add(aux1, aux1, tD);
 
 			mod_multiply(aux1, aux1, F);
 			mod_multiply(p_out.m_x, aux1, tA);
@@ -1771,9 +1770,9 @@ namespace crypto
 			mod_square(tB, tB);
 			mod_square(tC, p_point.m_x);
 			mod_square(tD, p_point.m_y);
+			mod_square(H, p_point.m_z);
 
 			mod_add(E, tC, tD);
-			mod_square(H, p_point.m_z);
 
 			mod_double(H);
 			mod_negate(H);
@@ -1823,9 +1822,8 @@ namespace crypto
 		R1.m_z[8] = 0;
 
 		block_t skey;
+		skey[8] &= 0;
 		memcpy(skey.data(), p_private_key.data(), p_private_key.size());
-
-		skey[8] &= 0xFFFF_ui64;
 
 		Curve_E521::order_reduce(skey);
 
@@ -1864,14 +1862,109 @@ namespace crypto
 	}
 
 
+	void Ed521::reduce_private_key(std::span<uint8_t, key_lenght> p_private_key)
+	{
+		Curve_E521::block_t temp;
+		temp[8] = 0;
+		memcpy(temp.data(), p_private_key.data(), key_lenght);
+		Curve_E521::order_reduce(temp);
+		memcpy(p_private_key.data(), temp.data(), key_lenght);
+	}
+
+	void Ed521::key_compress(const point_t& p_public_key, std::span<uint8_t, key_lenght> p_compressed_key)
+	{
+		memcpy(p_compressed_key.data(), p_public_key.m_y.data(), key_lenght);
+		if(p_public_key.m_x[0] & 1)
+		{
+			p_compressed_key[65] |= 0x80;
+		}
+	}
+
+	bool Ed521::key_expand(const std::span<const uint8_t, key_lenght> p_compressed_key, point_t& p_public_key)
+	{
+		using block_t = Curve_E521::block_t;
+
+		if(p_compressed_key[65] & 0x06)
+		{
+			return false;
+		}
+
+		const bool x_bit = p_compressed_key[65] & 0x80 ? true : false;
+
+		p_public_key.m_y[8] = 0;
+		memcpy(p_public_key.m_y.data(), p_compressed_key.data(), key_lenght);
+		p_public_key.m_y[8] &= 0x1FFF;
 
 
+		const block_t& t_y = reinterpret_cast<const block_t&>(p_public_key.m_y);
+
+		if(Curve_E521::compare_equal(
+				t_y,
+				block_t
+				{
+					Curve_E521::prime_base,
+					Curve_E521::prime_base,
+					Curve_E521::prime_base,
+					Curve_E521::prime_base,
+					Curve_E521::prime_base,
+					Curve_E521::prime_base,
+					Curve_E521::prime_base,
+					Curve_E521::prime_base,
+					Curve_E521::prime_base_l,
+				}))
+		{
+			return false;
+		}
 
 
+		block_t u;
+		block_t v;
+		block_t aux;
+
+		Curve_E521::mod_square(u, p_public_key.m_y);
+
+		if(Curve_E521::compare_equal(u, {1, 0, 0, 0, 0, 0, 0, 0, 0}))
+		{
+			if(x_bit)
+			{
+				return false;
+			}
+			memset(p_public_key.m_x.data(), 0, sizeof(block_t));
+			return true;
+		}
 
 
+		Curve_E521::mod_multiply(v, u, Curve_E521::D);
+		Curve_E521::mod_decrement(u, u);
+		Curve_E521::mod_decrement(v, v);
 
+		//todo: find smaller algorithm
+		memcpy(aux.data(), v.data(), sizeof(block_t));
 
+		Curve_E521::mod_inverse(aux);
 
+		Curve_E521::mod_multiply(aux, u, aux);
+
+		for(uint16_t i = 0; i < 521 - 3; ++i)
+		{
+			Curve_E521::mod_square(aux, aux);
+		}
+
+		Curve_E521::mod_square(p_public_key.m_x, aux);
+
+		Curve_E521::mod_square(aux, p_public_key.m_x);
+		Curve_E521::mod_multiply(aux, v, aux);
+		if(!Curve_E521::compare_equal(aux, u))
+		{
+			return false;
+		}
+
+		if((p_public_key.m_x[0] & 0x01 ? true : false) != x_bit)
+		{
+			Curve_E521::mod_negate(p_public_key.m_x);
+		}
+
+		return true;
+	}
 
 } //namespace crypto
