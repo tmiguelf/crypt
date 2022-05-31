@@ -25,10 +25,12 @@
 
 #include <array>
 #include <cstdint>
+#include <cstring>
 
 #include <benchmark/benchmark.h>
 
 #include <Crypt/codec/ECC.hpp>
+
 
 static inline void Ed25519_compute(benchmark::State& state)
 {

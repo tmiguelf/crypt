@@ -25,7 +25,8 @@
 
 #include <Crypt/codec/ECC.hpp>
 
-#include <string.h>
+#include <cstring>
+#include <limits>
 
 #include <CoreLib/Core_Type.hpp>
 
