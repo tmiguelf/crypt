@@ -28,7 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
-#include <Crypt/codec/symmetric/AES.hpp>
+#include <Crypt/codec/AES.hpp>
 
 constexpr std::array<uint8_t, 32> test_key =
 {

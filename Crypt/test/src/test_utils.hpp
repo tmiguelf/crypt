@@ -43,6 +43,11 @@ public:
 	{
 	}
 
+	testPrint(const std::span<const uint64_t> p_data)
+		: m_data(reinterpret_cast<const uint8_t*>(p_data.data()), p_data.size() * 8)
+	{
+	}
+
 	template<core::_p::c_toPrint_char CharT>
 	inline constexpr uintptr_t size(const CharT&) const
 	{
@@ -109,13 +114,20 @@ namespace testUtils
 	};
 
 
+	struct DataPair
+	{
+		std::vector<uint8_t> d0;
+		std::vector<uint8_t> d1;
+	};
+
 
 	using HashList		= std::vector<Hashable>;
 	using EncodeList	= std::vector<SymmetricEncodable>;
+	using PairList		= std::vector<DataPair>;
 
 	HashList	getHashList				(const std::filesystem::path& p_configPath, std::u32string_view p_hashName,  uint32_t p_hashSize);
 	EncodeList	getSymmetricEncodeList	(const std::filesystem::path& p_configPath, std::u32string_view p_codecName, uint32_t p_keySize);
-
+	PairList	getPrivatePublicKeyList	(const std::filesystem::path& p_configPath, std::u32string_view p_codecName, uint32_t p_privateKeySize, uint32_t p_publicKeySize);
 
 
 

@@ -187,6 +187,27 @@ namespace testUtils
 		return {};
 	}
 
+
+	static std::vector<uint8_t> get_hex_buffer(const std::u32string_view p_text)
+	{
+		if (p_text.size() & 1) return {};
+		const uintptr_t size = p_text.size() / 2;
+
+		std::vector<uint8_t> outp;
+		outp.resize(size);
+
+		for(uintptr_t i = 0; i < size; ++i)
+		{
+			const core::from_chars_result<uint8_t> res = core::from_chars_hex<uint8_t>(p_text.substr(i * 2, 2));
+			if(!res.has_value())
+			{
+				return {};
+			}
+			outp[i] = res.value();
+		}
+		return outp;
+	}
+
 	static std::vector<uint8_t> get_hash(const scef::keyedValue& p_key, const uint32_t p_expectedSize)
 	{
 		std::u32string_view tvalue = p_key.value();
@@ -197,20 +218,11 @@ namespace testUtils
 			return {};
 		}
 
-		std::vector<uint8_t> outp;
-		outp.resize(p_expectedSize);
-
-		for(uint32_t i = 0; i < p_expectedSize; ++i)
+		std::vector<uint8_t> outp = get_hex_buffer(tvalue);
+		if(outp.empty())
 		{
-			const core::from_chars_result<uint8_t> res = core::from_chars_hex<uint8_t>(tvalue.substr(i * 2, 2));
-			if(!res.has_value())
-			{
-				PrintOut("Invalid hash "sv, tvalue, " in line "sv , p_key.line());
-				return {};
-			}
-			outp[i] = res.value();
+			PrintOut("Invalid hash "sv, tvalue, " in line "sv , p_key.line());
 		}
-
 		return outp;
 	}
 
@@ -322,6 +334,18 @@ namespace testUtils
 		return output;
 	}
 
+	static std::filesystem::path normalize_path(const std::filesystem::path& p_path)
+	{
+		if (p_path.is_absolute())
+		{
+			return p_path.lexically_normal();
+		}
+		else
+		{
+			return (core::application_path().parent_path() / p_path).lexically_normal();
+		}
+	}
+
 
 	HashList getHashList(const std::filesystem::path& p_configPath, const std::u32string_view p_hashName, const uint32_t p_hashSize)
 	{
@@ -330,16 +354,7 @@ namespace testUtils
 			return {};
 		}
 
-		std::filesystem::path filepath;
-
-		if(p_configPath.is_absolute())
-		{
-			filepath = p_configPath.lexically_normal();
-		}
-		else
-		{
-			filepath = (core::application_path().parent_path() / p_configPath).lexically_normal();
-		}
+		const std::filesystem::path filepath = normalize_path(p_configPath);
 
 		if(filepath.empty())
 		{
@@ -409,16 +424,7 @@ namespace testUtils
 			return {};
 		}
 
-		std::filesystem::path filepath;
-
-		if(p_configPath.is_absolute())
-		{
-			filepath = p_configPath.lexically_normal();
-		}
-		else
-		{
-			filepath = (core::application_path().parent_path() / p_configPath).lexically_normal();
-		}
+		const std::filesystem::path filepath = normalize_path(p_configPath);
 
 		if(filepath.empty())
 		{
@@ -479,6 +485,103 @@ namespace testUtils
 
 		return list;
 	}
+
+	PairList getPrivatePublicKeyList(const std::filesystem::path& p_configPath, std::u32string_view p_codecName, uint32_t p_privateKeySize, uint32_t p_publicKeySize)
+	{
+		if(p_privateKeySize > 70000 || p_publicKeySize > 70000)
+		{
+			return {};
+		}
+
+		const std::filesystem::path filepath = normalize_path(p_configPath);
+
+		if (filepath.empty())
+		{
+			PrintOut("Failed to convert \""sv, p_configPath, "\" to a full path"sv);
+			return {};
+		}
+
+		scef::document configFile;
+		scef::Error err = configFile.load(filepath, scef::Flag::DisableSpacers | scef::Flag::DisableComments);
+
+		if(err != scef::Error::None)
+		{
+			PrintOut("Error "sv, static_cast<uint8_t>(err), " while parsing file \""sv, filepath, '\"');
+			return {};
+		}
+
+		const scef::itemProxy<const scef::group> usageGroup = configFile.root().find_group_by_name(U"test_vectors_public_key");
+
+		if(usageGroup.get() == nullptr)
+		{
+			PrintOut("No \"test_vectors_public_key\" found in file \""sv, filepath, '\"');
+			return {};
+		}
+
+		PairList list;
+
+		for(const scef::itemProxy<const scef::item>& titem0 : usageGroup->proxyList(scef::ItemType::group))
+		{
+			const scef::group& tcodec = *static_cast<const scef::group*>(titem0.get());
+			if(tcodec.name() != p_codecName)
+			{
+				continue;
+			}
+
+			for(const scef::itemProxy<const scef::item>& titem1 : tcodec.proxyList(scef::ItemType::group))
+			{
+				const scef::group& tcase = *static_cast<const scef::group*>(titem1.get());
+
+				const scef::itemProxy<const scef::keyedValue> private_key = tcase.find_key_by_name(U"private");
+				const scef::itemProxy<const scef::keyedValue> public_key  = tcase.find_key_by_name(U"public");
+
+				if(!private_key.get() || !public_key.get())
+				{
+					continue;
+				}
+
+				std::u32string_view tprivate = private_key->value();
+				std::u32string_view tpublic  = public_key ->value();
+
+				if(tprivate.size() != 2 * p_privateKeySize)
+				{
+					PrintOut("Invalid string private key size "sv, tprivate.size(), " expected "sv, 2 * p_privateKeySize,
+						" in line "sv , private_key->line());
+					continue;
+				}
+
+				if(tpublic.size() != 2 * p_publicKeySize)
+				{
+					PrintOut("Invalid string public key size "sv, tpublic.size(), " expected "sv, 2 * p_publicKeySize,
+						" in line "sv , public_key->line());
+					continue;
+				}
+
+				DataPair tpair;
+
+				tpair.d0 = get_hex_buffer(tprivate);
+
+				if(tpair.d0.empty())
+				{
+					PrintOut("Invalid key "sv, tprivate, " in line "sv , private_key->line());
+					continue;
+				}
+
+				tpair.d1 = get_hex_buffer(tpublic);
+
+				if(tpair.d1.empty())
+				{
+					PrintOut("Invalid key "sv, tpublic, " in line "sv , public_key->line());
+					continue;
+				}
+
+				list.push_back(std::move(tpair));
+			}
+		}
+
+		return list;
+	}
+
 
 
 } //namespace TestUntilities

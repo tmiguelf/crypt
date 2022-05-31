@@ -19,8 +19,8 @@
     <Filter Include="Source Files\codec">
       <UniqueIdentifier>{3dd816e6-4026-4253-8535-94ee17c5f138}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\codec\symmetric">
-      <UniqueIdentifier>{f4863230-bc3a-4913-9f65-bed5774e8ea4}</UniqueIdentifier>
+    <Filter Include="Source Files\utils">
+      <UniqueIdentifier>{908a1146-d3d3-49a5-85ad-9fcf0072578c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -33,8 +33,14 @@
     <ClCompile Include="src\test_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\codec\symmetric\test_AES.cpp">
-      <Filter>Source Files\codec\symmetric</Filter>
+    <ClCompile Include="src\codec\test_AES.cpp">
+      <Filter>Source Files\codec</Filter>
+    </ClCompile>
+    <ClCompile Include="src\codec\test_ECC.cpp">
+      <Filter>Source Files\codec</Filter>
+    </ClCompile>
+    <ClCompile Include="src\codec\test_extended_precision.cpp">
+      <Filter>Source Files\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

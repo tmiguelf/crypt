@@ -33,7 +33,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <Crypt/codec/symmetric/AES.hpp>
+#include <Crypt/codec/AES.hpp>
 
 #include <test_utils.hpp>
 
