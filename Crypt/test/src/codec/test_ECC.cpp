@@ -39,8 +39,6 @@
 
 #include <test_utils.hpp>
 
-#include "../../../src/codec/Ed521.cpp"
-
 TEST(codec_asymmetric, ED25519_gen_public)
 {
 	using key_t   = crypto::Ed25519::key_t;
@@ -171,6 +169,34 @@ TEST(codec_asymmetric, ED25519_compress_roundtrip)
 		<< "\nSecret    : " << testPrint{secret1};
 }
 
+TEST(codec_asymmetric, ED25519_point_on_curve)
+{
+	std::random_device rd;  //Will be used to obtain a seed for the random number engine
+	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+	std::uniform_int_distribution<uint64_t> distrib(0, std::numeric_limits<uint64_t>::max());
+
+	alignas(8) crypto::Ed25519::key_t secret;
+
+	using alias_t = std::array<uint64_t, 4>;
+	{
+		alias_t& temp = reinterpret_cast<alias_t&>(secret);
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+	}
+
+	crypto::Ed25519::point_t pub;
+	crypto::Ed25519::public_key(secret, pub);
+
+	ASSERT_TRUE(crypto::Ed25519::is_on_curve(pub)) << "\nSecret    : " << testPrint{secret};
+
+	pub.m_x[1] ^= 0xFFFFFFFFFFFFFFFF;
+
+	ASSERT_FALSE(crypto::Ed25519::is_on_curve(pub)) << "\nSecret    : " << testPrint{secret};
+}
+
+
 TEST(codec_asymmetric, ED521_key_agreement)
 {
 	std::random_device rd;  //Will be used to obtain a seed for the random number engine
@@ -268,4 +294,37 @@ TEST(codec_asymmetric, ED521_compress_roundtrip)
 		<< "\nOrigin    : " << '{' << testPrint{pub1.m_x} << "; " << testPrint{pub1.m_y} << '}'
 		<< "\nRound-trip: " << '{' << testPrint{expanded.m_x} << "; " << testPrint{expanded.m_y} << '}'
 		<< "\nSecret    : " << testPrint{secret1};
+}
+
+
+TEST(codec_asymmetric, Ed521_point_on_curve)
+{
+	std::random_device rd;  //Will be used to obtain a seed for the random number engine
+	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+	std::uniform_int_distribution<uint64_t> distrib(0, std::numeric_limits<uint64_t>::max());
+
+	alignas(8) crypto::Ed521::key_t secret;
+
+	using alias_t = std::array<uint64_t, 8>;
+	{
+		alias_t& temp = reinterpret_cast<alias_t&>(secret);
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+		temp[4] = distrib(gen);
+		temp[5] = distrib(gen);
+		temp[6] = distrib(gen);
+		temp[7] = distrib(gen);
+		reinterpret_cast<uint16_t&>(secret[64]) = static_cast<uint16_t>(distrib(gen));
+	}
+
+	crypto::Ed521::point_t pub;
+	crypto::Ed521::public_key(secret, pub);
+
+	ASSERT_TRUE(crypto::Ed521::is_on_curve(pub)) << "\nSecret    : " << testPrint{secret};
+
+	pub.m_x[1] ^= 0xFFFFFFFFFFFFFFFF;
+
+	ASSERT_FALSE(crypto::Ed521::is_on_curve(pub)) << "\nSecret    : " << testPrint{secret};
 }

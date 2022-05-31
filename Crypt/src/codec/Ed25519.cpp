@@ -131,6 +131,13 @@ namespace crypto
 
 		static constexpr point_t generator{X, Y};
 
+		static constexpr point_t neutral
+		{
+			.m_x{0, 0, 0, 0},
+			.m_y{1, 0, 0, 0}
+		};
+
+
 		static bool compare_equal(const block_t& p_1, const block_t& p_2)
 		{
 			return
@@ -952,6 +959,49 @@ namespace crypto
 
 	} //namespace
 
+
+	void Ed25519::hashed_private_key(
+		std::span<const uint8_t, key_lenght> p_input,
+		std::span<uint8_t, key_lenght> p_output)
+	{
+
+		Curve_25519::block_t temp;
+
+		{
+			crypto::SHA2_512 ash;
+			ash.reset();
+			ash.update(p_input);
+			ash.finalize();
+
+			const crypto::SHA2_512::digest_t& res = ash.digest();
+
+			static_assert(std::is_same_v<std::remove_cvref_t<decltype(res)>::value_type, uint64_t>);
+
+			temp[0] = core::endian_host2big(res[0]);
+			temp[1] = core::endian_host2big(res[1]);
+			temp[2] = core::endian_host2big(res[2]);
+			temp[3] = core::endian_host2big(res[3]);
+		}
+
+		{
+			std::array<uint8_t, key_lenght>& conv = *reinterpret_cast<std::array<uint8_t, key_lenght>*>(&temp);
+			conv[0] &= 0xF8;
+			conv[31] &= 0x7F;
+			conv[31] |= 0x40;
+		}
+		Curve_25519::order_reduce(temp);
+
+		memcpy(p_output.data(), temp.data(), key_lenght);
+	}
+
+	void Ed25519::reduce_private_key(std::span<uint8_t, key_lenght> p_private_key)
+	{
+		Curve_25519::block_t temp;
+		memcpy(temp.data(), p_private_key.data(), key_lenght);
+		Curve_25519::order_reduce(temp);
+		memcpy(p_private_key.data(), temp.data(), key_lenght);
+	}
+
 	void Ed25519::public_key(std::span<const uint8_t, key_lenght> p_private_key, point_t& p_public_key)
 	{
 		composite_key(p_private_key, Curve_25519::generator, p_public_key);
@@ -964,7 +1014,7 @@ namespace crypto
 		//x = X/Z, y = Y/Z, x * y = T/Z
 
 		using projective_point_t = Curve_25519::projective_point_t;
-		projective_point_t R0{.m_x{0, 0, 0, 0}, .m_y{1, 0, 0, 0}, .m_z{1, 0, 0, 0}, .m_t{0, 0, 0, 0}};
+		projective_point_t R0{.m_x{Curve_25519::neutral.m_x}, .m_y{Curve_25519::neutral.m_y}, .m_z{1, 0, 0, 0}, .m_t{0, 0, 0, 0}};
 		projective_point_t R1;
 
 		memcpy(R1.m_x.data(), p_public_key.m_x.data(), sizeof(block_t));
@@ -1184,46 +1234,29 @@ namespace crypto
 	}
 
 
-	void Ed25519::hashed_private_key(
-		std::span<const uint8_t, key_lenght> p_input,
-		std::span<uint8_t, key_lenght> p_output)
+	bool Ed25519::is_null(const point_t& p_public_key)
 	{
-
-		Curve_25519::block_t temp;
-
-		{
-			crypto::SHA2_512 ash;
-			ash.reset();
-			ash.update(p_input);
-			ash.finalize();
-
-			const crypto::SHA2_512::digest_t& res = ash.digest();
-
-			static_assert(std::is_same_v<std::remove_cvref_t<decltype(res)>::value_type, uint64_t>);
-
-			temp[0] = core::endian_host2big(res[0]);
-			temp[1] = core::endian_host2big(res[1]);
-			temp[2] = core::endian_host2big(res[2]);
-			temp[3] = core::endian_host2big(res[3]);
-		}
-
-		{
-			std::array<uint8_t, key_lenght>& conv = *reinterpret_cast<std::array<uint8_t, key_lenght>*>(&temp);
-			conv[0] &= 0xF8;
-			conv[31] &= 0x7F;
-			conv[31] |= 0x40;
-		}
-		Curve_25519::order_reduce(temp);
-
-		memcpy(p_output.data(), temp.data(), key_lenght);
+		return memcmp(&p_public_key, &Curve_25519::neutral, sizeof(point_t)) == 0;
 	}
 
-	void Ed25519::reduce_private_key(std::span<uint8_t, key_lenght> p_private_key)
+	bool Ed25519::is_on_curve(const point_t& p_public_key)
 	{
-		Curve_25519::block_t temp;
-		memcpy(temp.data(), p_private_key.data(), key_lenght);
-		Curve_25519::order_reduce(temp);
-		memcpy(p_private_key.data(), temp.data(), key_lenght);
+		using block_t = Curve_25519::block_t;
+		block_t lt;
+		block_t y2;
+		block_t rt;
+
+		Curve_25519::mod_square(lt, p_public_key.m_x);
+		Curve_25519::mod_square(y2, p_public_key.m_y);
+
+		Curve_25519::mod_multiply(rt, lt, y2);
+		Curve_25519::mod_multiply(rt, rt, Curve_25519::D);
+		Curve_25519::mod_increment(rt, rt);
+
+		Curve_25519::mod_negate(lt);
+		Curve_25519::mod_add(lt, lt, y2);
+
+		return memcmp(&lt, &rt, sizeof(block_t)) == 0;
 	}
 
 } //namespace crypto

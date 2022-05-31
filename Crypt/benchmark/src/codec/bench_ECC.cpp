@@ -35,9 +35,7 @@ static inline void Ed25519_compute(benchmark::State& state)
 	crypto::Ed25519::key_t t_key;
 
 	memset(t_key.data(), 0xFF, t_key.size());
-
 	t_key[31] = 0x0F;
-
 
 	for (auto _ : state)
 	{
@@ -48,3 +46,22 @@ static inline void Ed25519_compute(benchmark::State& state)
 }
 
 BENCHMARK(Ed25519_compute);
+
+
+static inline void Ed521_compute(benchmark::State& state)
+{
+	crypto::Ed521::key_t t_key;
+
+	memset(t_key.data(), 0xFF, t_key.size());
+	t_key[65] = 0x00;
+	t_key[64] = 0x0F;
+
+	for (auto _ : state)
+	{
+		crypto::Ed521::point_t pkey;
+		crypto::Ed521::public_key(t_key, pkey);
+		benchmark::DoNotOptimize(pkey);
+	}
+}
+
+BENCHMARK(Ed521_compute);

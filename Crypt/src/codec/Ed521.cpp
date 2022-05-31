@@ -122,6 +122,12 @@ namespace crypto
 
 		static constexpr point_t generator{X, Y};
 
+		static constexpr point_t neutral
+		{
+			.m_x{0, 0, 0, 0, 0, 0, 0, 0, 0},
+			.m_y{1, 0, 0, 0, 0, 0, 0, 0, 0}
+		};
+
 		static bool compare_equal(const block_t& p_1, const block_t& p_2)
 		{
 			return memcmp(p_1.data(), p_2.data(), sizeof(block_t)) == 0;
@@ -1793,6 +1799,15 @@ namespace crypto
 
 	} //namespace
 
+	
+	void Ed521::reduce_private_key(std::span<uint8_t, key_lenght> p_private_key)
+	{
+		Curve_E521::block_t temp;
+		temp[8] = 0;
+		memcpy(temp.data(), p_private_key.data(), key_lenght);
+		Curve_E521::order_reduce(temp);
+		memcpy(p_private_key.data(), temp.data(), key_lenght);
+	}
 
 	void Ed521::public_key(std::span<const uint8_t, key_lenght> p_private_key, point_t& p_public_key)
 	{
@@ -1806,7 +1821,7 @@ namespace crypto
 		//x = X/Z, y = Y/Z
 
 		using projective_point_t = Curve_E521::projective_point_t;
-		projective_point_t R0{.m_x{0, 0, 0, 0, 0, 0, 0, 0, 0}, .m_y{1, 0, 0, 0, 0, 0, 0, 0, 0}, .m_z{1, 0, 0, 0, 0, 0, 0, 0, 0}};
+		projective_point_t R0{.m_x{Curve_E521::neutral.m_x}, .m_y{Curve_E521::neutral.m_y}, .m_z{1, 0, 0, 0, 0, 0, 0, 0, 0}};
 		projective_point_t R1;
 
 		memcpy(R1.m_x.data(), p_public_key.m_x.data(), sizeof(block_t));
@@ -1859,16 +1874,6 @@ namespace crypto
 		Curve_E521::mod_inverse(R0.m_z);
 		Curve_E521::mod_multiply(reinterpret_cast<block_t&>(p_shared_key.m_x), R0.m_x, R0.m_z);
 		Curve_E521::mod_multiply(reinterpret_cast<block_t&>(p_shared_key.m_y), R0.m_y, R0.m_z);
-	}
-
-
-	void Ed521::reduce_private_key(std::span<uint8_t, key_lenght> p_private_key)
-	{
-		Curve_E521::block_t temp;
-		temp[8] = 0;
-		memcpy(temp.data(), p_private_key.data(), key_lenght);
-		Curve_E521::order_reduce(temp);
-		memcpy(p_private_key.data(), temp.data(), key_lenght);
 	}
 
 	void Ed521::key_compress(const point_t& p_public_key, std::span<uint8_t, key_lenght> p_compressed_key)
@@ -1965,6 +1970,31 @@ namespace crypto
 		}
 
 		return true;
+	}
+
+
+	bool Ed521::is_null(const point_t& p_public_key)
+	{
+		return memcmp(&p_public_key, &Curve_E521::neutral, sizeof(point_t)) == 0;
+	}
+
+	bool Ed521::is_on_curve(const point_t& p_public_key)
+	{
+		using block_t = Curve_E521::block_t;
+		block_t lt;
+		block_t y2;
+		block_t rt;
+
+		Curve_E521::mod_square(lt, p_public_key.m_x);
+		Curve_E521::mod_square(y2, p_public_key.m_y);
+
+		Curve_E521::mod_multiply(rt, lt, y2);
+		Curve_E521::mod_multiply(rt, rt, Curve_E521::D);
+		Curve_E521::mod_increment(rt, rt);
+
+		Curve_E521::mod_add(lt, lt, y2);
+
+		return memcmp(&lt, &rt, sizeof(block_t)) == 0;
 	}
 
 } //namespace crypto

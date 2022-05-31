@@ -61,6 +61,9 @@ namespace crypto
 
 		static void key_compress(const point_t& p_public_key, std::span<uint8_t, key_lenght> p_compressed_key);
 		static bool key_expand  (const std::span<const uint8_t, key_lenght> p_compressed_key, point_t& p_public_key);
+
+		static bool is_null(const point_t& p_public_key);
+		static bool is_on_curve(const point_t& p_public_key);
 	};
 
 
@@ -91,6 +94,9 @@ namespace crypto
 
 		static void key_compress(const point_t& p_public_key, std::span<uint8_t, key_lenght> p_compressed_key);
 		static bool key_expand  (const std::span<const uint8_t, key_lenght> p_compressed_key, point_t& p_public_key);
+
+		static bool is_null(const point_t& p_public_key);
+		static bool is_on_curve(const point_t& p_public_key);
 	};
 
 } //namespace crypto
