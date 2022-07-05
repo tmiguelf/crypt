@@ -27,7 +27,7 @@
 
 #include <limits>
 
-#include <string.h>
+#include <cstring>
 
 #include <CoreLib/Core_Type.hpp>
 #include <CoreLib/Core_Endian.hpp>
@@ -147,6 +147,257 @@ namespace crypto
 				(p_1[3] == p_2[3]);
 		}
 
+
+		//assumes highest value < prime field
+		static void mpi_multiply(std::array<uint64_t, 8>& p_out, const block_t& p_1, const block_t& p_2)
+		{
+			uint64_t mul_carry;
+			uint64_t mul_carry_2;
+			uint64_t acum;
+			std::array<uint8_t, 4> lcarry;
+			std::array<uint8_t, 2> Dcarry;
+
+			//Block 0
+			p_out[0] = umul(p_1[0], p_2[0], &mul_carry);
+
+			//Block 1
+			lcarry[0] =
+				addcarry(0,
+					umul(p_1[0], p_2[1], &mul_carry_2),
+					mul_carry,
+					&acum);
+
+			lcarry[1] =
+				addcarry(0,
+					umul(p_1[1], p_2[0], &mul_carry),
+					acum,
+					&(p_out[1]));
+
+			//--
+			Dcarry[0] =
+				addcarry(0, mul_carry, mul_carry_2, &mul_carry);
+
+
+			//Block 2
+			lcarry[0] =
+				addcarry(lcarry[0],
+					umul(p_1[0], p_2[2], &mul_carry_2),
+					mul_carry,
+					&acum);
+
+			lcarry[1] =
+				addcarry(lcarry[1],
+					umul(p_1[1], p_2[1], &mul_carry),
+					acum,
+					&acum);
+
+			Dcarry[0] =
+				addcarry(Dcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+			lcarry[2] =
+				addcarry(0,
+					umul(p_1[2], p_2[0], &mul_carry_2),
+					acum,
+					&(p_out[2]));
+
+			//--
+			Dcarry[1] =
+				addcarry(0, mul_carry, mul_carry_2, &mul_carry);
+
+
+			//Block 3
+			lcarry[0] =
+				addcarry(lcarry[0],
+					umul(p_1[0], p_2[3], &mul_carry_2),
+					mul_carry,
+					&acum);
+
+			lcarry[1] =
+				addcarry(lcarry[1],
+					umul(p_1[3], p_2[0], &mul_carry),
+					acum,
+					&acum);
+
+			addcarry(Dcarry[1], mul_carry, mul_carry_2, &mul_carry);
+
+			lcarry[2] =
+				addcarry(lcarry[2],
+					umul(p_1[1], p_2[2], &mul_carry_2),
+					acum,
+					&acum);
+
+			Dcarry[0] =
+				addcarry(Dcarry[0], mul_carry, mul_carry_2, &mul_carry);
+
+			lcarry[3] =
+				addcarry(0,
+					umul(p_1[2], p_2[1], &mul_carry_2),
+					acum,
+					&(p_out[3]));
+
+			//--
+			Dcarry[1] =
+				addcarry(lcarry[3], mul_carry, mul_carry_2, &mul_carry);
+
+
+			//Block 4
+			lcarry[0] =
+				addcarry(lcarry[0],
+					umul(p_1[1], p_2[3], &mul_carry_2),
+					mul_carry,
+					&acum);
+
+			lcarry[1] =
+				addcarry(lcarry[1],
+					umul(p_1[3], p_2[1], &mul_carry),
+					acum,
+					&acum);
+
+			addcarry(Dcarry[1], mul_carry, mul_carry_2, &mul_carry);
+
+			lcarry[2] =
+				addcarry(lcarry[2],
+					umul(p_1[2], p_2[2], &mul_carry_2),
+					acum,
+					&(p_out[4]));
+
+			//--
+			Dcarry[0] =
+				addcarry(Dcarry[0], mul_carry, mul_carry_2 + lcarry[2], &mul_carry);
+
+
+			//Block 5
+			lcarry[0] =
+				addcarry(lcarry[0],
+					umul(p_1[2], p_2[3], &mul_carry_2),
+					mul_carry,
+					&acum);
+
+			lcarry[1] =
+				addcarry(lcarry[1],
+					umul(p_1[3], p_2[2], &mul_carry),
+					acum,
+					&(p_out[5]));
+
+			//--
+			addcarry(Dcarry[0], mul_carry, mul_carry_2 + lcarry[1], &mul_carry);
+
+			//Block 6
+			lcarry[0] =
+				addcarry(lcarry[0],
+					umul(p_1[3], p_2[3], &(p_out[7])),
+					mul_carry,
+					&(p_out[6]));
+
+			//Block 7
+			p_out[7] += lcarry[0];
+		}
+
+		static void mpi_square(std::array<uint64_t, 8>& p_out, const block_t& p_in)
+		{
+			uint64_t mul_carry;
+			uint8_t lcarry;
+			uint8_t lcarry_2;
+			uint8_t Dcarry;
+
+			//double blocks
+
+			//Block 0
+			//Block 1
+			p_out[1] = umul(p_in[0], p_in[1], &(p_out[2]));
+
+			//Block 2
+			lcarry =
+				addcarry(0,
+					umul(p_in[0], p_in[2], &(p_out[3])),
+					p_out[2],
+					&(p_out[2]));
+
+			//Block 3
+			lcarry =
+				addcarry(lcarry,
+					umul(p_in[0], p_in[3], &(p_out[4])),
+					p_out[3],
+					&(p_out[3]));
+
+			lcarry_2 =
+				addcarry(0,
+					umul(p_in[1], p_in[2], &mul_carry),
+					p_out[3],
+					&(p_out[3]));
+
+			//--
+			Dcarry =
+				addcarry(lcarry_2, p_out[4], mul_carry, &(p_out[4]));
+
+			//Block 4
+			lcarry =
+				addcarry(lcarry,
+					umul(p_in[1], p_in[3], &(p_out[5])),
+					p_out[4],
+					&(p_out[4]));
+
+			//Block 5
+			lcarry =
+				addcarry(lcarry,
+					umul(p_in[2], p_in[3], &(p_out[6])),
+					p_out[5] + Dcarry,
+					&(p_out[5]));
+
+			//Block 6
+			p_out[6] += lcarry;
+
+			//Block 7
+
+			//== Doubling ==
+			lcarry = addcarry(0     , p_out[1], p_out[1], &(p_out[1]));
+			lcarry = addcarry(lcarry, p_out[2], p_out[2], &(p_out[2]));
+			lcarry = addcarry(lcarry, p_out[3], p_out[3], &(p_out[3]));
+			lcarry = addcarry(lcarry, p_out[4], p_out[4], &(p_out[4]));
+			lcarry = addcarry(lcarry, p_out[5], p_out[5], &(p_out[5]));
+			lcarry = addcarry(lcarry, p_out[6], p_out[6], &(p_out[6]));
+
+			//single blocks
+			//Block 0
+			p_out[0] = umul(p_in[0], p_in[0], &mul_carry);
+
+			//Block 1
+			lcarry = addcarry(0, p_out[1], mul_carry, &(p_out[1]));
+
+			//Block 2
+			lcarry =
+				addcarry(
+					lcarry,
+					umul(p_in[1], p_in[1], &mul_carry),
+					p_out[2],
+					&(p_out[2]));
+
+			//Block 3
+			lcarry = addcarry(lcarry, p_out[3], mul_carry, &(p_out[3]));
+
+			//Block 4
+			lcarry =
+				addcarry(
+					lcarry,
+					umul(p_in[2], p_in[2], &mul_carry),
+					p_out[4],
+					&(p_out[4]));
+
+			//Block 5
+			lcarry = addcarry(lcarry, p_out[5], mul_carry, &(p_out[5]));
+
+			//Block 6
+			lcarry =
+				addcarry(
+					lcarry,
+					umul(p_in[3], p_in[3], &(p_out[7])),
+					p_out[6],
+					&(p_out[6]));
+
+			//Block 7
+			p_out[7] += lcarry;
+		}
+
 		static void mod_increment(block_t& p_out, const block_t& p_in)
 		{
 			if
@@ -250,56 +501,6 @@ namespace crypto
 		static void mod_double(block_t& p_val)
 		{
 			mod_add(p_val, p_val, p_val);
-		}
-
-
-		static void order_reduce(block_t& p_val)
-		{
-			if(p_val[3] & 0xE000000000000000)
-			{
-				const uint64_t div = p_val[3] / (order[3] + 1);
-
-				uint64_t mul_carry;
-				uint8_t borrow;
-				uint64_t tmp;
-
-				borrow = subborrow(0, p_val[0], umul(order[0], div, &mul_carry), p_val.data());
-
-				borrow = subborrow(borrow, p_val[1], mul_carry, &tmp);
-				if(subborrow(0, tmp, umul(order[1], div, &mul_carry), p_val.data() + 1))
-				{
-					++mul_carry;
-				}
-
-				//this block is all zeros 0
-				borrow = subborrow(borrow, p_val[2], mul_carry, p_val.data() + 2);
-
-				subborrow(borrow, p_val[3], umul(order[3], div, &mul_carry), p_val.data() + 3);
-			}
-			if
-			(
-				p_val[3] > order[3] ||
-				(
-					p_val[3] == order[3] &&
-					(
-						p_val[2] ||
-						(
-							p_val[1] > order[1] ||
-							(
-								p_val[1] == order[1] &&
-								p_val[0] >= order[0]
-							)
-						)
-					)
-				)
-			)
-			{
-				uint8_t borrow;
-				borrow = subborrow(0     , p_val[0], order[0], p_val.data());
-				borrow = subborrow(borrow, p_val[1], order[1], p_val.data() + 1);
-				borrow = subborrow(borrow, p_val[2], order[2], p_val.data() + 2);
-				         subborrow(borrow, p_val[3], order[3], p_val.data() + 3);
-			}
 		}
 
 
@@ -468,152 +669,7 @@ namespace crypto
 		static void mod_multiply(block_t& p_out, const block_t& p_1, const block_t& p_2)
 		{
 			std::array<uint64_t, 8> temp;
-
-			//======== Multiply ========
-			{
-				uint64_t mul_carry;
-				uint64_t mul_carry_2;
-				uint64_t acum;
-				std::array<uint8_t, 4> lcarry;
-				std::array<uint8_t, 2> Dcarry;
-
-				//Block 0
-				temp[0] = umul(p_1[0], p_2[0], &mul_carry);
-
-				//Block 1
-				lcarry[0] =
-					addcarry(0,
-						umul(p_1[0], p_2[1], &mul_carry_2),
-						mul_carry,
-						&acum);
-
-				lcarry[1] =
-					addcarry(0,
-						umul(p_1[1], p_2[0], &mul_carry),
-						acum,
-						&(temp[1]));
-
-				//--
-				Dcarry[0] =
-					addcarry(0, mul_carry, mul_carry_2, &mul_carry);
-
-
-				//Block 2
-				lcarry[0] =
-					addcarry(lcarry[0],
-						umul(p_1[0], p_2[2], &mul_carry_2),
-						mul_carry,
-						&acum);
-
-				lcarry[1] =
-					addcarry(lcarry[1],
-						umul(p_1[1], p_2[1], &mul_carry),
-						acum,
-						&acum);
-
-				Dcarry[0] =
-					addcarry(Dcarry[0], mul_carry, mul_carry_2, &mul_carry);
-
-				lcarry[2] =
-					addcarry(0,
-						umul(p_1[2], p_2[0], &mul_carry_2),
-						acum,
-						&(temp[2]));
-
-				//--
-				Dcarry[1] =
-					addcarry(0, mul_carry, mul_carry_2, &mul_carry);
-
-
-				//Block 3
-				lcarry[0] =
-					addcarry(lcarry[0],
-						umul(p_1[0], p_2[3], &mul_carry_2),
-						mul_carry,
-						&acum);
-
-				lcarry[1] =
-					addcarry(lcarry[1],
-						umul(p_1[3], p_2[0], &mul_carry),
-						acum,
-						&acum);
-
-				addcarry(Dcarry[1], mul_carry, mul_carry_2, &mul_carry);
-
-				lcarry[2] =
-					addcarry(lcarry[2],
-						umul(p_1[1], p_2[2], &mul_carry_2),
-						acum,
-						&acum);
-
-				Dcarry[0] =
-					addcarry(Dcarry[0], mul_carry, mul_carry_2, &mul_carry);
-
-				lcarry[3] =
-					addcarry(0,
-						umul(p_1[2], p_2[1], &mul_carry_2),
-						acum,
-						&(temp[3]));
-
-				//--
-				Dcarry[1] =
-					addcarry(lcarry[3], mul_carry, mul_carry_2, &mul_carry);
-
-
-				//Block 4
-				lcarry[0] =
-					addcarry(lcarry[0],
-						umul(p_1[1], p_2[3], &mul_carry_2),
-						mul_carry,
-						&acum);
-
-				lcarry[1] =
-					addcarry(lcarry[1],
-						umul(p_1[3], p_2[1], &mul_carry),
-						acum,
-						&acum);
-
-				addcarry(Dcarry[1], mul_carry, mul_carry_2, &mul_carry);
-
-				lcarry[2] =
-					addcarry(lcarry[2],
-						umul(p_1[2], p_2[2], &mul_carry_2),
-						acum,
-						&(temp[4]));
-
-				//--
-				Dcarry[0] =
-					addcarry(Dcarry[0], mul_carry, mul_carry_2 + lcarry[2], &mul_carry);
-
-
-				//Block 5
-				lcarry[0] =
-					addcarry(lcarry[0],
-						umul(p_1[2], p_2[3], &mul_carry_2),
-						mul_carry,
-						&acum);
-
-				lcarry[1] =
-					addcarry(lcarry[1],
-						umul(p_1[3], p_2[2], &mul_carry),
-						acum,
-						&(temp[5]));
-
-				//--
-				addcarry(Dcarry[0], mul_carry, mul_carry_2 + lcarry[1], &mul_carry);
-
-				//Block 6
-				lcarry[0] =
-					addcarry(lcarry[0],
-						umul(p_1[3], p_2[3], &(temp[7])),
-						mul_carry,
-						&(temp[6]));
-
-
-				//Block 7
-				temp[7] += lcarry[0];
-			}
-
+			mpi_multiply(temp, p_1, p_2);
 			mul_reduce(temp);
 			memcpy(p_out.data(), temp.data(), sizeof(block_t));
 		}
@@ -622,112 +678,7 @@ namespace crypto
 		static void mod_square(block_t& p_out, const block_t& p_in)
 		{
 			std::array<uint64_t, 8> temp;
-
-			//======== Square ========
-			{
-				uint64_t mul_carry;
-				uint8_t lcarry;
-				uint8_t lcarry_2;
-				uint8_t Dcarry;
-
-				//double blocks
-
-				//Block 0
-				//Block 1
-				temp[1] = umul(p_in[0], p_in[1], &(temp[2]));
-
-				//Block 2
-				lcarry =
-					addcarry(0,
-						umul(p_in[0], p_in[2], &(temp[3])),
-						temp[2],
-						&(temp[2]));
-
-				//Block 3
-				lcarry =
-					addcarry(lcarry,
-						umul(p_in[0], p_in[3], &(temp[4])),
-						temp[3],
-						&(temp[3]));
-
-				lcarry_2 =
-					addcarry(0,
-						umul(p_in[1], p_in[2], &mul_carry),
-						temp[3],
-						&(temp[3]));
-
-				//--
-				Dcarry =
-					addcarry(lcarry_2, temp[4], mul_carry, &(temp[4]));
-
-				//Block 4
-				lcarry =
-					addcarry(lcarry,
-						umul(p_in[1], p_in[3], &(temp[5])),
-						temp[4],
-						&(temp[4]));
-
-				//Block 5
-				lcarry =
-					addcarry(lcarry,
-						umul(p_in[2], p_in[3], &(temp[6])),
-						temp[5] + Dcarry,
-						&(temp[5]));
-
-				//Block 6
-				temp[6] += lcarry;
-				
-				//Block 7
-
-				//== Doubling ==
-				lcarry = addcarry(0     , temp[1], temp[1], &(temp[1]));
-				lcarry = addcarry(lcarry, temp[2], temp[2], &(temp[2]));
-				lcarry = addcarry(lcarry, temp[3], temp[3], &(temp[3]));
-				lcarry = addcarry(lcarry, temp[4], temp[4], &(temp[4]));
-				lcarry = addcarry(lcarry, temp[5], temp[5], &(temp[5]));
-				lcarry = addcarry(lcarry, temp[6], temp[6], &(temp[6]));
-
-				//single blocks
-				//Block 0
-				temp[0] = umul(p_in[0], p_in[0], &mul_carry);
-				
-				//Block 1
-				lcarry = addcarry(0, temp[1], mul_carry, &(temp[1]));
-
-				//Block 2
-				lcarry =
-					addcarry(
-						lcarry,
-						umul(p_in[1], p_in[1], &mul_carry),
-						temp[2],
-						&(temp[2]));
-				
-				//Block 3
-				lcarry = addcarry(lcarry, temp[3], mul_carry, &(temp[3]));
-
-				//Block 4
-				lcarry =
-					addcarry(
-						lcarry,
-						umul(p_in[2], p_in[2], &mul_carry),
-						temp[4],
-						&(temp[4]));
-
-				//Block 5
-				lcarry = addcarry(lcarry, temp[5], mul_carry, &(temp[5]));
-
-				//Block 6
-				lcarry =
-					addcarry(
-						lcarry,
-						umul(p_in[3], p_in[3], &(temp[7])),
-						temp[6],
-						&(temp[6]));
-
-				//Block 7
-				temp[7] += lcarry;
-
-			}
+			mpi_square(temp, p_in);
 			mul_reduce(temp);
 			memcpy(p_out.data(), temp.data(), sizeof(block_t));
 		}
@@ -840,6 +791,189 @@ namespace crypto
 //			mod_square(k, k);
 //			mod_multiply(p_val, accum, k);
 		}
+
+
+		static inline bool order_should_reduce(const std::span<const uint64_t, 4> p_val)
+		{
+			return p_val[3] > order[3] ||
+				(
+					p_val[3] == order[3] &&
+					(
+						p_val[2] ||
+						(
+							p_val[1] > order[1] ||
+							(
+								p_val[1] == order[1] &&
+								p_val[0] >= order[0]
+								)
+							)
+						)
+					);
+		}
+
+		static inline void order_simple_reduce(const std::span<uint64_t, 4> p_val)
+		{
+			uint8_t borrow;
+			borrow = subborrow(0     , p_val[0], order[0], p_val.data());
+			borrow = subborrow(borrow, p_val[1], order[1], p_val.data() + 1);
+			borrow = subborrow(borrow, p_val[2], order[2], p_val.data() + 2);
+			         subborrow(borrow, p_val[3], order[3], p_val.data() + 3);
+		}
+
+		static void order_short_reduce(const std::span<uint64_t, 4> p_val)
+		{
+			if(p_val[3] & 0xE000000000000000)
+			{
+				const uint64_t div = p_val[3] / (order[3]);
+				if(div > 1)
+				{
+					uint64_t mul_carry;
+					uint8_t borrow;
+					uint64_t tmp;
+
+					borrow = subborrow(0, p_val[0], umul(order[0], div, &mul_carry), p_val.data());
+
+					borrow = subborrow(borrow, p_val[1], mul_carry, &tmp);
+					if(subborrow(0, tmp, umul(order[1], div, &mul_carry), p_val.data() + 1))
+					{
+						++mul_carry;
+					}
+
+					//this block is all zeros 0
+					borrow = subborrow(borrow, p_val[2], mul_carry, p_val.data() + 2);
+
+					if(subborrow(borrow, p_val[3], umul(order[3], div, &mul_carry), p_val.data() + 3))
+					{
+						borrow = addcarry(0     , p_val[0], order[0], p_val.data());
+						borrow = addcarry(borrow, p_val[1], order[1], p_val.data() + 1);
+						borrow = addcarry(borrow, p_val[2], order[2], p_val.data() + 2);
+						addcarry(borrow, p_val[3], order[3], p_val.data() + 3);
+					}
+					return;
+				}
+			}
+
+			if(order_should_reduce(p_val))
+			{
+				order_simple_reduce(p_val);
+			}
+		}
+
+		//assumes high bits < oder
+		static void order_hi_reduce(const std::span<uint64_t, 5> p_val)
+		{
+			if(p_val[4])
+			{
+				[[maybe_unused]] uint64_t unused;
+				const uint64_t div = (p_val[4] == order[3]) ? 0xFFFFFFFFFFFFFFFF : udiv(p_val[4], p_val[3], order[3], &unused);
+
+				uint64_t mul_carry;
+				uint8_t borrow;
+
+				borrow = subborrow(0, p_val[0], umul(div, order[0], &mul_carry), p_val.data() + 0);
+
+				borrow = subborrow(borrow, p_val[1], mul_carry, p_val.data() + 1);
+				if(subborrow(0, p_val[1], umul(div, order[1], &mul_carry), p_val.data() + 1))
+				{
+					++mul_carry;
+				}
+
+				borrow = subborrow(borrow, p_val[2], mul_carry, p_val.data() + 2);
+
+				borrow = subborrow(borrow, p_val[3], umul(div, order[3], &mul_carry), p_val.data() + 3);
+
+				if(subborrow(borrow, p_val[4], mul_carry, p_val.data() + 4))
+				{
+					borrow = addcarry(0     , p_val[0], order[0], p_val.data());
+					borrow = addcarry(borrow, p_val[1], order[1], p_val.data() + 1);
+					borrow = addcarry(borrow, p_val[2], order[2], p_val.data() + 2);
+					addcarry(borrow, p_val[3], order[3], p_val.data() + 3);
+					p_val[4] = 0;
+				}
+			}
+		}
+
+		static void order_reduce(block_t& p_val)
+		{
+			order_short_reduce(p_val);
+		}
+
+		static void order_mul_reduce(std::array<uint64_t, 8>& p_val)
+		{
+			order_hi_reduce   (std::span<uint64_t, 5>{p_val.data() + 3, 5});
+			order_short_reduce(std::span<uint64_t, 4>{p_val.data() + 3, 4});
+
+			order_hi_reduce   (std::span<uint64_t, 5>{p_val.data() + 2, 5});
+			order_short_reduce(std::span<uint64_t, 4>{p_val.data() + 2, 4});
+
+			order_hi_reduce   (std::span<uint64_t, 5>{p_val.data() + 1, 5});
+			order_short_reduce(std::span<uint64_t, 4>{p_val.data() + 1, 4});
+
+			order_hi_reduce   (std::span<uint64_t, 5>{p_val.data() + 0, 5});
+			order_short_reduce(std::span<uint64_t, 4>{p_val.data() + 0, 4});
+		}
+
+		static void order_multiply(block_t& p_1, const block_t& p_2)
+		{
+			std::array<uint64_t, 8> temp;
+			mpi_multiply(temp, p_1, p_2);
+			order_mul_reduce(temp);
+			memcpy(p_1.data(), temp.data(), sizeof(block_t));
+		}
+
+		static void order_add(block_t& p_1, const block_t& p_2)
+		{
+			uint8_t carry;
+			carry = addcarry(0    , p_1[0], p_2[0], p_1.data());
+			carry = addcarry(carry, p_1[1], p_2[1], p_1.data() + 1);
+			carry = addcarry(carry, p_1[2], p_2[2], p_1.data() + 2);
+			addcarry(carry, p_1[3], p_2[3], p_1.data() + 3);
+
+			if(order_should_reduce(p_1))
+			{
+				order_simple_reduce(p_1);
+			}
+		}
+
+		static void compute_r_key(
+			const block_t& skey,
+			const std::span<const uint8_t, Ed25519::key_lenght> message_digest,
+			const std::span<const uint8_t> context, const uint8_t token, block_t& rkey)
+		{
+			SHA2_256 hasher;
+			static_assert(sizeof(block_t) == sizeof(decltype(hasher)::digest_t));
+
+			hasher.update(context);
+			hasher.update(std::span<const uint8_t>{&token, 1});
+			hasher.update(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(skey.data()), sizeof(skey)));
+			hasher.update(message_digest);
+			hasher.finalize();
+			memcpy(rkey.data(), hasher.digest().data(), sizeof(block_t));
+
+			Curve_25519::order_reduce(rkey);
+		}
+
+		static void compute_k_key(
+			const std::span<const uint8_t, Ed25519::key_lenght> message_digest,
+			const std::span<const uint8_t> context, const point_t& R_key, block_t& kkey)
+		{
+			SHA2_256 hasher;
+			constexpr block_t null{0, 0, 0, 0};
+			static_assert(sizeof(block_t) == sizeof(decltype(hasher)::digest_t));
+
+			hasher.update(context);
+			hasher.update(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&R_key), sizeof(R_key)));
+			hasher.update(message_digest);
+			hasher.finalize();
+			memcpy(kkey.data(), hasher.digest().data(), sizeof(block_t));
+			Curve_25519::order_reduce(kkey);
+
+			if(memcmp(kkey.data(), &null, sizeof(block_t)) == 0)
+			{
+				kkey[0] = 1;
+			}
+		}
+
 
 		static void ED_point_add(const projective_point_t& p_1, projective_point_t& p_out)
 		{
@@ -1257,6 +1391,115 @@ namespace crypto
 		Curve_25519::mod_add(lt, lt, y2);
 
 		return memcmp(&lt, &rt, sizeof(block_t)) == 0;
+	}
+
+
+
+	void Ed25519::sign(
+		const std::span<const uint8_t, key_lenght> p_private_key,
+		const std::span<const uint8_t, key_lenght> p_message_digest, const std::span<const uint8_t> p_context,
+		point_t& p_R, const std::span<uint8_t, key_lenght> p_S)
+	{
+		//	r = sha2(context| 0 | sk | M)
+		//	if r == 0: r = sha2(context| 1 | sk | M)
+		//	R = r*G
+		//	k = sha2(context| R | M)
+		//	if k == 0: k = 1
+		//	S = (r + k*sk)
+
+		using block_t = Curve_25519::block_t;
+
+		constexpr block_t null{0, 0, 0, 0};
+
+		block_t skey;
+		memcpy(skey.data(), p_private_key.data(), sizeof(block_t));
+
+		Curve_25519::order_reduce(skey);
+
+		//r key
+		block_t rkey;
+		{
+			Curve_25519::compute_r_key(skey, p_message_digest, p_context, 0, rkey);
+			if(memcmp(rkey.data(), &null, sizeof(block_t)) == 0)
+			{
+				Curve_25519::compute_r_key(skey, p_message_digest, p_context, 1, rkey);
+				if(memcmp(rkey.data(), &null, sizeof(block_t)) == 0)
+				{
+					memset(&p_R, 0, sizeof(p_R));
+					memset(p_S.data(), 0, p_S.size());
+					return;
+				}
+			}
+		}
+
+		public_key(std::span<const uint8_t, key_lenght>(reinterpret_cast<const uint8_t*>(rkey.data()), key_lenght), p_R);
+
+		//k key
+		block_t kkey;
+		Curve_25519::compute_k_key(p_message_digest, p_context, p_R, kkey);
+		Curve_25519::order_multiply(skey, kkey);
+		Curve_25519::order_add(skey, rkey);
+
+		memcpy(p_S.data(), skey.data(), key_lenght);
+	}
+
+	bool Ed25519::verify(const point_t& p_public_key,
+		std::span<const uint8_t, key_lenght> p_message_digest, std::span<const uint8_t> p_context,
+		const point_t& p_R, std::span<const uint8_t, key_lenght> p_S)
+	{
+		if(!is_on_curve(p_R))
+		{
+			return false;
+		}
+
+		//	k = sha2(context| R | M)
+		//	if k == 0: k = 1
+		//	P1 = S*G
+		//	P2 = R + k*Pk
+		//	P1 == P2
+		using block_t = Curve_25519::block_t;
+		block_t kkey;
+		Curve_25519::compute_k_key(p_message_digest, p_context, p_R, kkey);
+
+		point_t p1;
+		public_key(p_S, p1);
+
+		point_t p2;
+		composite_key(std::span<const uint8_t, key_lenght>{reinterpret_cast<const uint8_t*>(kkey.data()), key_lenght}, p_public_key, p2);
+
+		{
+			using projective_point_t = Curve_25519::projective_point_t;
+			projective_point_t p2_p;
+			projective_point_t R_p;
+			memcpy(p2_p.m_x.data(), p2.m_x.data(), sizeof(block_t));
+			memcpy(p2_p.m_y.data(), p2.m_y.data(), sizeof(block_t));
+			p2_p.m_z[0] = 1;
+			p2_p.m_z[1] = 0;
+			p2_p.m_z[2] = 0;
+			p2_p.m_z[3] = 0;
+
+			Curve_25519::mod_multiply(p2_p.m_t, p2_p.m_x, p2_p.m_y);
+
+			memcpy(R_p.m_x.data(), p_R.m_x.data(), sizeof(block_t));
+			memcpy(R_p.m_y.data(), p_R.m_y.data(), sizeof(block_t));
+			R_p.m_z[0] = 1;
+			R_p.m_z[1] = 0;
+			R_p.m_z[2] = 0;
+			R_p.m_z[3] = 0;
+
+			Curve_25519::mod_multiply(R_p.m_t, R_p.m_x, R_p.m_y);
+
+			Curve_25519::ED_point_add(R_p, p2_p);
+
+			Curve_25519::mod_inverse(p2_p.m_z);
+			Curve_25519::mod_multiply(reinterpret_cast<block_t&>(p2_p.m_x), p2_p.m_x, p2_p.m_z);
+			Curve_25519::mod_multiply(reinterpret_cast<block_t&>(p2_p.m_y), p2_p.m_y, p2_p.m_z);
+
+			memcpy(p2.m_x.data(), p2_p.m_x.data(), sizeof(block_t));
+			memcpy(p2.m_y.data(), p2_p.m_y.data(), sizeof(block_t));
+		}
+
+		return memcmp(&p1, &p2, sizeof(p1)) == 0;
 	}
 
 } //namespace crypto

@@ -197,6 +197,87 @@ TEST(codec_asymmetric, ED25519_point_on_curve)
 }
 
 
+TEST(codec_asymmetric, ED25519_signature)
+{
+	std::random_device rd;  //Will be used to obtain a seed for the random number engine
+	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+	std::uniform_int_distribution<uint64_t> distrib(0, std::numeric_limits<uint64_t>::max());
+
+	alignas(8) crypto::Ed25519::key_t secret;
+	alignas(8) crypto::Ed25519::key_t fake;
+	std::array<uint64_t, 4> rand_hash;
+
+	std::array<uint8_t, 256> rand_context;
+	const uint8_t context_length = static_cast<uint8_t>(distrib(gen));
+
+	for(uint8_t i = context_length; i--; )
+	{
+		rand_context[i] = static_cast<uint8_t>(distrib(gen));
+	}
+
+	const std::span<const uint8_t> context{rand_context.data(), context_length};
+
+	using alias_t = std::array<uint64_t, 4>;
+	{
+		alias_t& temp = reinterpret_cast<alias_t&>(secret);
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+	}
+
+	{
+		alias_t& temp = reinterpret_cast<alias_t&>(fake);
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+	}
+
+	crypto::Ed25519::reduce_private_key(secret);
+	crypto::Ed25519::reduce_private_key(fake);
+
+	if(memcmp(&secret, &fake, sizeof(secret)) == 0)
+	{
+		fake[0] ^= 1;
+	}
+
+	{
+		rand_hash[0] = distrib(gen);
+		rand_hash[1] = distrib(gen);
+		rand_hash[2] = distrib(gen);
+		rand_hash[3] = distrib(gen);
+	}
+
+	const std::span<const uint8_t, 32> message_digest{reinterpret_cast<uint8_t*>(rand_hash.data()), 32};
+
+	using point_t = crypto::Ed25519::point_t;
+	using key_t = crypto::Ed25519::key_t;
+
+	point_t public_key;
+
+	crypto::Ed25519::public_key(secret, public_key);
+
+	point_t real_r;
+	key_t real_s;
+
+	point_t fake_r;
+	key_t fake_s;
+
+	crypto::Ed25519::sign(secret, message_digest, context, real_r, real_s);
+	crypto::Ed25519::sign(fake, message_digest, context, fake_r, fake_s);
+
+	const bool res1 = crypto::Ed25519::verify(public_key, message_digest, context, real_r, real_s);
+	ASSERT_TRUE(res1);
+
+	const bool res2 = crypto::Ed25519::verify(public_key, message_digest, context, fake_r, fake_s);
+	ASSERT_FALSE(res2);
+
+}
+
+
+
+
 TEST(codec_asymmetric, ED521_key_agreement)
 {
 	std::random_device rd;  //Will be used to obtain a seed for the random number engine

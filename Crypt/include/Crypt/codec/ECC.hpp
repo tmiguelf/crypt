@@ -64,6 +64,27 @@ namespace crypto
 
 		static bool is_null(const point_t& p_public_key);
 		static bool is_on_curve(const point_t& p_public_key);
+
+
+		//	r = sha2(context| 0 | sk | M)
+		//	if r == 0: r = sha2(context| 1 | sk | M)
+		//	R = r*G
+		//	k = sha2(context| R | M)
+		//	if k == 0: k = 1
+		//	S = (r + k*sk)
+		static void sign(
+			std::span<const uint8_t, key_lenght> p_private_key,
+			std::span<const uint8_t, key_lenght> p_message_digest, std::span<const uint8_t> p_context,
+			point_t& p_R, std::span<uint8_t, key_lenght> p_S);
+
+		//	k = sha2(context| R | M)
+		//	if k == 0: k = 1
+		//	P1 = S*G
+		//	P2 = R + k*Pk
+		//	P1 == P2
+		static bool verify(const point_t& p_public_key,
+			std::span<const uint8_t, key_lenght> p_message_digest, std::span<const uint8_t> p_context,
+			const point_t& p_R, std::span<const uint8_t, key_lenght> p_S);
 	};
 
 
