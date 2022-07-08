@@ -25,9 +25,8 @@
 
 #include <Crypt/codec/ECC.hpp>
 
-#include <limits>
-
 #include <cstring>
+#include <limits>
 
 #include <CoreLib/Core_Type.hpp>
 #include <CoreLib/Core_Endian.hpp>
@@ -59,10 +58,8 @@ namespace crypto
 		using point_t = Ed25519::point_t;
 		using block_t = std::array<uint64_t, 4>;
 
-		struct projective_point_t
+		struct projective_point_t: public point_t
 		{
-			block_t m_x;
-			block_t m_y;
 			block_t m_z;
 			block_t m_t;
 		};
@@ -805,10 +802,10 @@ namespace crypto
 							(
 								p_val[1] == order[1] &&
 								p_val[0] >= order[0]
-								)
 							)
 						)
-					);
+					)
+				);
 		}
 
 		static inline void order_simple_reduce(const std::span<uint64_t, 4> p_val)
@@ -820,7 +817,7 @@ namespace crypto
 			         subborrow(borrow, p_val[3], order[3], p_val.data() + 3);
 		}
 
-		static void order_short_reduce(const std::span<uint64_t, 4> p_val)
+		static void order_low_reduce(const std::span<uint64_t, 4> p_val)
 		{
 			if(p_val[3] & 0xE000000000000000)
 			{
@@ -895,22 +892,22 @@ namespace crypto
 
 		static void order_reduce(block_t& p_val)
 		{
-			order_short_reduce(p_val);
+			order_low_reduce(p_val);
 		}
 
 		static void order_mul_reduce(std::array<uint64_t, 8>& p_val)
 		{
-			order_hi_reduce   (std::span<uint64_t, 5>{p_val.data() + 3, 5});
-			order_short_reduce(std::span<uint64_t, 4>{p_val.data() + 3, 4});
+			order_hi_reduce (std::span<uint64_t, 5>{p_val.data() + 3, 5});
+			order_low_reduce(std::span<uint64_t, 4>{p_val.data() + 3, 4});
 
-			order_hi_reduce   (std::span<uint64_t, 5>{p_val.data() + 2, 5});
-			order_short_reduce(std::span<uint64_t, 4>{p_val.data() + 2, 4});
+			order_hi_reduce (std::span<uint64_t, 5>{p_val.data() + 2, 5});
+			order_low_reduce(std::span<uint64_t, 4>{p_val.data() + 2, 4});
 
-			order_hi_reduce   (std::span<uint64_t, 5>{p_val.data() + 1, 5});
-			order_short_reduce(std::span<uint64_t, 4>{p_val.data() + 1, 4});
+			order_hi_reduce (std::span<uint64_t, 5>{p_val.data() + 1, 5});
+			order_low_reduce(std::span<uint64_t, 4>{p_val.data() + 1, 4});
 
-			order_hi_reduce   (std::span<uint64_t, 5>{p_val.data() + 0, 5});
-			order_short_reduce(std::span<uint64_t, 4>{p_val.data() + 0, 4});
+			order_hi_reduce (std::span<uint64_t, 5>{p_val.data() + 0, 5});
+			order_low_reduce(std::span<uint64_t, 4>{p_val.data() + 0, 4});
 		}
 
 		static void order_multiply(block_t& p_1, const block_t& p_2)
@@ -927,7 +924,7 @@ namespace crypto
 			carry = addcarry(0    , p_1[0], p_2[0], p_1.data());
 			carry = addcarry(carry, p_1[1], p_2[1], p_1.data() + 1);
 			carry = addcarry(carry, p_1[2], p_2[2], p_1.data() + 2);
-			addcarry(carry, p_1[3], p_2[3], p_1.data() + 3);
+			        addcarry(carry, p_1[3], p_2[3], p_1.data() + 3);
 
 			if(order_should_reduce(p_1))
 			{
@@ -950,7 +947,7 @@ namespace crypto
 			hasher.finalize();
 			memcpy(rkey.data(), hasher.digest().data(), sizeof(block_t));
 
-			Curve_25519::order_reduce(rkey);
+			order_reduce(rkey);
 		}
 
 		static void compute_k_key(
@@ -966,14 +963,13 @@ namespace crypto
 			hasher.update(message_digest);
 			hasher.finalize();
 			memcpy(kkey.data(), hasher.digest().data(), sizeof(block_t));
-			Curve_25519::order_reduce(kkey);
+			order_reduce(kkey);
 
 			if(memcmp(kkey.data(), &null, sizeof(block_t)) == 0)
 			{
 				kkey[0] = 1;
 			}
 		}
-
 
 		static void ED_point_add(const projective_point_t& p_1, projective_point_t& p_out)
 		{
@@ -1148,7 +1144,7 @@ namespace crypto
 		//x = X/Z, y = Y/Z, x * y = T/Z
 
 		using projective_point_t = Curve_25519::projective_point_t;
-		projective_point_t R0{.m_x{Curve_25519::neutral.m_x}, .m_y{Curve_25519::neutral.m_y}, .m_z{1, 0, 0, 0}, .m_t{0, 0, 0, 0}};
+		projective_point_t R0{Curve_25519::neutral.m_x, Curve_25519::neutral.m_y, {1, 0, 0, 0}, {0, 0, 0, 0}};
 		projective_point_t R1;
 
 		memcpy(R1.m_x.data(), p_public_key.m_x.data(), sizeof(block_t));
@@ -1458,48 +1454,41 @@ namespace crypto
 		//	P2 = R + k*Pk
 		//	P1 == P2
 		using block_t = Curve_25519::block_t;
+		using projective_point_t = Curve_25519::projective_point_t;
 		block_t kkey;
 		Curve_25519::compute_k_key(p_message_digest, p_context, p_R, kkey);
 
 		point_t p1;
 		public_key(p_S, p1);
 
-		point_t p2;
+		projective_point_t p2;
 		composite_key(std::span<const uint8_t, key_lenght>{reinterpret_cast<const uint8_t*>(kkey.data()), key_lenght}, p_public_key, p2);
 
 		{
-			using projective_point_t = Curve_25519::projective_point_t;
-			projective_point_t p2_p;
+			p2.m_z[0] = 1;
+			p2.m_z[1] = 0;
+			p2.m_z[2] = 0;
+			p2.m_z[3] = 0;
+
+			Curve_25519::mod_multiply(p2.m_t, p2.m_x, p2.m_y);
+
 			projective_point_t R_p;
-			memcpy(p2_p.m_x.data(), p2.m_x.data(), sizeof(block_t));
-			memcpy(p2_p.m_y.data(), p2.m_y.data(), sizeof(block_t));
-			p2_p.m_z[0] = 1;
-			p2_p.m_z[1] = 0;
-			p2_p.m_z[2] = 0;
-			p2_p.m_z[3] = 0;
-
-			Curve_25519::mod_multiply(p2_p.m_t, p2_p.m_x, p2_p.m_y);
-
 			memcpy(R_p.m_x.data(), p_R.m_x.data(), sizeof(block_t));
 			memcpy(R_p.m_y.data(), p_R.m_y.data(), sizeof(block_t));
 			R_p.m_z[0] = 1;
 			R_p.m_z[1] = 0;
 			R_p.m_z[2] = 0;
 			R_p.m_z[3] = 0;
-
 			Curve_25519::mod_multiply(R_p.m_t, R_p.m_x, R_p.m_y);
 
-			Curve_25519::ED_point_add(R_p, p2_p);
+			Curve_25519::ED_point_add(R_p, p2);
 
-			Curve_25519::mod_inverse(p2_p.m_z);
-			Curve_25519::mod_multiply(reinterpret_cast<block_t&>(p2_p.m_x), p2_p.m_x, p2_p.m_z);
-			Curve_25519::mod_multiply(reinterpret_cast<block_t&>(p2_p.m_y), p2_p.m_y, p2_p.m_z);
-
-			memcpy(p2.m_x.data(), p2_p.m_x.data(), sizeof(block_t));
-			memcpy(p2.m_y.data(), p2_p.m_y.data(), sizeof(block_t));
+			Curve_25519::mod_inverse(p2.m_z);
+			Curve_25519::mod_multiply(reinterpret_cast<block_t&>(p2.m_x), p2.m_x, p2.m_z);
+			Curve_25519::mod_multiply(reinterpret_cast<block_t&>(p2.m_y), p2.m_y, p2.m_z);
 		}
 
-		return memcmp(&p1, &p2, sizeof(p1)) == 0;
+		return memcmp(&p1, &static_cast<point_t&>(p2), sizeof(p1)) == 0;
 	}
 
 } //namespace crypto
