@@ -55,7 +55,7 @@ TEST(extended_precision, umul)
 	for(const TestCase& tcase : cases)
 	{
 		uint64_t res_high = 0;
-		const uint64_t res_low = crypto::umul(tcase.var1, tcase.var2, &res_high);
+		const uint64_t res_low = crypto::umul(tcase.var1, tcase.var2, res_high);
 
 		ASSERT_EQ(res_low, tcase.res_low) << "\nCase: 0x" << core::toPrint_hex(tcase.var1) << " * 0x" << core::toPrint_hex(tcase.var2);
 		ASSERT_EQ(res_high, tcase.res_high) << "\nCase: 0x" << core::toPrint_hex(tcase.var1) << " * 0x" << core::toPrint_hex(tcase.var2);
@@ -85,7 +85,7 @@ TEST(extended_precision, udiv)
 	for(const TestCase& tcase : cases)
 	{
 		uint64_t rem = 0;
-		const uint64_t res = crypto::udiv(tcase.num_high, tcase.num_low, tcase.div, &rem);
+		const uint64_t res = crypto::udiv(tcase.num_high, tcase.num_low, tcase.div, rem);
 
 		ASSERT_EQ(res, tcase.res) << "\nCase: 0x" << core::toPrint_hex(tcase.num_high)  << ' ' << core::toPrint_hex(tcase.num_low) << " / 0x" << core::toPrint_hex(tcase.div);
 		ASSERT_EQ(rem, tcase.rem) << "\nCase: 0x" << core::toPrint_hex(tcase.num_high)  << ' ' << core::toPrint_hex(tcase.num_low) << " / 0x" << core::toPrint_hex(tcase.div);
