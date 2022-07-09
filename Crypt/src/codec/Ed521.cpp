@@ -1827,7 +1827,7 @@ namespace crypto
 					++mul_carry;
 				}
 
-				subborrow(borrow, p_val[9], mul_carry, p_val[9]);  //doesn't matter if zeroed
+				//subborrow(borrow, p_val[9], mul_carry, p_val[9]);  //doesn't matter if zeroed
 			}
 		}
 
