@@ -1685,15 +1685,9 @@ namespace crypto
 					borrow2 = subborrow(borrow2, tmp     , umul(order[i], div, mul_carry), p_val[i]);
 				}
 
-				if(p_val[8] & 0xFF80)
+				if(p_val[8] & 0x80)
 				{
-					borrow2 = 0;
-					borrow = subborrow(0, p_val[0], umul(order[0], div, mul_carry), p_val[0]);
-					for(uint8_t i = 1; i < 9; ++i)
-					{
-						borrow  = subborrow(borrow , p_val[i], mul_carry                     , tmp);
-						borrow2 = subborrow(borrow2, tmp     , umul(order[i], div, mul_carry), p_val[i]);
-					}
+					order_simple_reduce(p_val);
 				}
 			}
 			if(order_should_reduce(p_val))
@@ -1710,56 +1704,21 @@ namespace crypto
 			{
 				uint64_t mul_carry;
 				uint8_t borrow;
+				uint8_t borrow2 = 0;
 				uint64_t tmp;
 
 				borrow = subborrow(0, p_val[0], umul(order[0], div, mul_carry), p_val[0]);
 
-				borrow = subborrow(borrow, p_val[1], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[1], div, mul_carry), p_val[1]))
+				for(uint8_t i = 1; i < 9; ++i)
 				{
-					++mul_carry;
+					borrow  = subborrow(borrow , p_val[i], mul_carry                     , tmp);
+					borrow2 = subborrow(borrow2, tmp     , umul(order[i], div, mul_carry), p_val[i]);
 				}
 
-				borrow = subborrow(borrow, p_val[2], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[2], div, mul_carry), p_val[2]))
+				if(p_val[8] & 0x80)
 				{
-					++mul_carry;
+					order_simple_reduce(p_val);
 				}
-
-				borrow = subborrow(borrow, p_val[3], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[3], div, mul_carry), p_val[3]))
-				{
-					++mul_carry;
-				}
-
-				borrow = subborrow(borrow, p_val[4], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[4], div, mul_carry), p_val[4]))
-				{
-					++mul_carry;
-				}
-
-				borrow = subborrow(borrow, p_val[5], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[5], div, mul_carry), p_val[5]))
-				{
-					++mul_carry;
-				}
-
-				borrow = subborrow(borrow, p_val[6], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[6], div, mul_carry), p_val[6]))
-				{
-					++mul_carry;
-				}
-
-				borrow = subborrow(borrow, p_val[7], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[7], div, mul_carry), p_val[7]))
-				{
-					++mul_carry;
-				}
-
-				subborrow(borrow, p_val[8], mul_carry, tmp);
-				subborrow(0, tmp, umul(order[8], div, mul_carry), p_val[8]);
-				if(!order_should_reduce(p_val)) return;
-				order_simple_reduce(p_val);
 			}
 			if(order_should_reduce(p_val))
 			{
@@ -1773,58 +1732,17 @@ namespace crypto
 			{
 				uint64_t mul_carry;
 				uint8_t borrow;
+				uint8_t borrow2 = 0;
 				uint64_t tmp;
 
 				const uint64_t div = udiv(p_val[9], p_val[8], order[8] + 1, mul_carry);
 
 				borrow = subborrow(0, p_val[0], umul(order[0], div, mul_carry), p_val[0]);
 
-				borrow = subborrow(borrow, p_val[1], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[1], div, mul_carry), p_val[1]))
+				for(uint8_t i = 1; i < 9; ++i)
 				{
-					++mul_carry;
-				}
-
-				borrow = subborrow(borrow, p_val[2], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[2], div, mul_carry), p_val[2]))
-				{
-					++mul_carry;
-				}
-
-				borrow = subborrow(borrow, p_val[3], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[3], div, mul_carry), p_val[3]))
-				{
-					++mul_carry;
-				}
-
-				borrow = subborrow(borrow, p_val[4], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[4], div, mul_carry), p_val[4]))
-				{
-					++mul_carry;
-				}
-
-				borrow = subborrow(borrow, p_val[5], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[5], div, mul_carry), p_val[5]))
-				{
-					++mul_carry;
-				}
-
-				borrow = subborrow(borrow, p_val[6], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[6], div, mul_carry), p_val[6]))
-				{
-					++mul_carry;
-				}
-
-				borrow = subborrow(borrow, p_val[7], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[7], div, mul_carry), p_val[7]))
-				{
-					++mul_carry;
-				}
-
-				borrow = subborrow(borrow, p_val[8], mul_carry, tmp);
-				if(subborrow(0, tmp, umul(order[8], div, mul_carry), p_val[8]))
-				{
-					++mul_carry;
+					borrow  = subborrow(borrow , p_val[i], mul_carry                     , tmp);
+					borrow2 = subborrow(borrow2, tmp     , umul(order[i], div, mul_carry), p_val[i]);
 				}
 
 				//subborrow(borrow, p_val[9], mul_carry, p_val[9]);  //doesn't matter if zeroed
@@ -1835,29 +1753,11 @@ namespace crypto
 		{
 			order_low_reduce(std::span<uint64_t,  9>{p_val.data() + 8,  9});
 
-			order_hi_reduce (std::span<uint64_t, 10>{p_val.data() + 7, 10});
-			order_low_reduce(std::span<uint64_t,  9>{p_val.data() + 7,  9});
-
-			order_hi_reduce (std::span<uint64_t, 10>{p_val.data() + 6, 10});
-			order_low_reduce(std::span<uint64_t,  9>{p_val.data() + 6,  9});
-
-			order_hi_reduce (std::span<uint64_t, 10>{p_val.data() + 5, 10});
-			order_low_reduce(std::span<uint64_t,  9>{p_val.data() + 5,  9});
-
-			order_hi_reduce (std::span<uint64_t, 10>{p_val.data() + 4, 10});
-			order_low_reduce(std::span<uint64_t,  9>{p_val.data() + 4,  9});
-
-			order_hi_reduce (std::span<uint64_t, 10>{p_val.data() + 3, 10});
-			order_low_reduce(std::span<uint64_t,  9>{p_val.data() + 3,  9});
-
-			order_hi_reduce (std::span<uint64_t, 10>{p_val.data() + 2, 10});
-			order_low_reduce(std::span<uint64_t,  9>{p_val.data() + 2,  9});
-
-			order_hi_reduce (std::span<uint64_t, 10>{p_val.data() + 1, 10});
-			order_low_reduce(std::span<uint64_t,  9>{p_val.data() + 1,  9});
-
-			order_hi_reduce (std::span<uint64_t, 10>{p_val.data() + 0, 10});
-			order_low_reduce(std::span<uint64_t,  9>{p_val.data() + 0,  9});
+			for(uint8_t i = 8; i--;)
+			{
+				order_hi_reduce (std::span<uint64_t, 10>{p_val.data() + i, 10});
+				order_low_reduce(std::span<uint64_t,  9>{p_val.data() + i,  9});
+			}
 		}
 
 		static void order_multiply(block_t& p_1, const block_t& p_2)
