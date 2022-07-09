@@ -58,19 +58,11 @@ namespace crypto
 		using point_t = Ed25519::point_t;
 		using block_t = std::array<uint64_t, 4>;
 
-#if (defined(ALT_PROJECTIVE) || defined(ALT_INVERTED))
-		struct projective_point_t: public point_t
-		{
-			block_t m_z;
-		};
-#else
-
 		struct projective_point_t: public point_t
 		{
 			block_t m_z;
 			block_t m_t;
 		};
-#endif
 
 		static constexpr block_t prime
 		{
