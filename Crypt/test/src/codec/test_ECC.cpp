@@ -37,6 +37,10 @@
 #include <Crypt/codec/ECC.hpp>
 #include <Crypt/hash/sha2.hpp>
 
+
+#include "../../Crypt/src/codec/Ed521.cpp"
+
+
 #include <test_utils.hpp>
 
 TEST(codec_asymmetric, ED25519_gen_public)
@@ -267,15 +271,22 @@ TEST(codec_asymmetric, ED25519_signature)
 	crypto::Ed25519::sign(secret, message_digest, context, real_r, real_s);
 	crypto::Ed25519::sign(fake, message_digest, context, fake_r, fake_s);
 
-	const bool res1 = crypto::Ed25519::verify(public_key, message_digest, context, real_r, real_s);
-	ASSERT_TRUE(res1);
-
-	const bool res2 = crypto::Ed25519::verify(public_key, message_digest, context, fake_r, fake_s);
-	ASSERT_FALSE(res2);
-
+	{
+		const bool res = crypto::Ed25519::verify(public_key, message_digest, context, real_r, real_s);
+		ASSERT_TRUE(res)
+			<< "\nSecret : " << testPrint{secret}
+			<< "\nMessage: " << testPrint{message_digest}
+			<< "\nContext: " << testPrint{context};
+	}
+	{
+		const bool res = crypto::Ed25519::verify(public_key, message_digest, context, fake_r, fake_s);
+		ASSERT_FALSE(res)
+			<< "\nSecret : " << testPrint{secret}
+			<< "\nMessage: " << testPrint{message_digest}
+			<< "\nContext: " << testPrint{context}
+			<< "\nFake   : " << testPrint{fake};
+	}
 }
-
-
 
 
 TEST(codec_asymmetric, ED521_key_agreement)
@@ -408,4 +419,110 @@ TEST(codec_asymmetric, Ed521_point_on_curve)
 	pub.m_x[1] ^= 0xFFFFFFFFFFFFFFFF;
 
 	ASSERT_FALSE(crypto::Ed521::is_on_curve(pub)) << "\nSecret    : " << testPrint{secret};
+}
+
+
+TEST(codec_asymmetric, Ed521_signature)
+{
+	using point_t = crypto::Ed521::point_t;
+	using key_t = crypto::Ed521::key_t;
+
+	std::random_device rd;  //Will be used to obtain a seed for the random number engine
+	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+	std::uniform_int_distribution<uint64_t> distrib(0, std::numeric_limits<uint64_t>::max());
+
+	alignas(8) key_t secret;
+	alignas(8) key_t fake;
+	alignas(8) key_t rand_hash;
+
+	std::array<uint8_t, 256> rand_context;
+	const uint8_t context_length = static_cast<uint8_t>(distrib(gen));
+
+	for(uint8_t i = context_length; i--; )
+	{
+		rand_context[i] = static_cast<uint8_t>(distrib(gen));
+	}
+
+	const std::span<const uint8_t> context{rand_context.data(), context_length};
+
+	using alias_t = std::array<uint64_t, 8>;
+	{
+		alias_t& temp = reinterpret_cast<alias_t&>(secret);
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+		temp[4] = distrib(gen);
+		temp[5] = distrib(gen);
+		temp[6] = distrib(gen);
+		temp[7] = distrib(gen);
+		reinterpret_cast<uint16_t&>(secret[64]) = static_cast<uint16_t>(distrib(gen));
+	}
+
+	{
+		alias_t& temp = reinterpret_cast<alias_t&>(fake);
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+		temp[4] = distrib(gen);
+		temp[5] = distrib(gen);
+		temp[6] = distrib(gen);
+		temp[7] = distrib(gen);
+		reinterpret_cast<uint16_t&>(fake[64]) = static_cast<uint16_t>(distrib(gen));
+	}
+
+	crypto::Ed521::reduce_private_key(secret);
+	crypto::Ed521::reduce_private_key(fake);
+
+
+	if(memcmp(&secret, &fake, sizeof(secret)) == 0)
+	{
+		fake[0] ^= 1;
+	}
+
+	{
+		alias_t& temp = reinterpret_cast<alias_t&>(rand_hash);
+		temp[0] = distrib(gen);
+		temp[1] = distrib(gen);
+		temp[2] = distrib(gen);
+		temp[3] = distrib(gen);
+		temp[4] = distrib(gen);
+		temp[5] = distrib(gen);
+		temp[6] = distrib(gen);
+		temp[7] = distrib(gen);
+		reinterpret_cast<uint16_t&>(rand_hash[64]) = static_cast<uint16_t>(distrib(gen));
+	}
+
+	const std::span<const uint8_t, 66> message_digest{reinterpret_cast<uint8_t*>(rand_hash.data()), 66};
+
+
+	point_t public_key;
+
+	crypto::Ed521::public_key(secret, public_key);
+
+	point_t real_r;
+	key_t real_s;
+
+	point_t fake_r;
+	key_t fake_s;
+
+	crypto::Ed521::sign(secret, message_digest, context, real_r, real_s);
+	crypto::Ed521::sign(fake, message_digest, context, fake_r, fake_s);
+
+	{
+		const bool res = crypto::Ed521::verify(public_key, message_digest, context, real_r, real_s);
+		ASSERT_TRUE(res)
+			<< "\nSecret : " << testPrint{secret}
+			<< "\nMessage: " << testPrint{message_digest}
+			<< "\nContext: " << testPrint{context};
+	}
+	{
+		const bool res = crypto::Ed521::verify(public_key, message_digest, context, fake_r, fake_s);
+		ASSERT_FALSE(res)
+			<< "\nSecret : " << testPrint{secret}
+			<< "\nMessage: " << testPrint{message_digest}
+			<< "\nContext: " << testPrint{context}
+			<< "\nFake   : " << testPrint{fake};
+	}
 }
