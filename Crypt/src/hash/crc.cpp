@@ -51,7 +51,7 @@ template<typename IntT>
 static constexpr IntT reflect(IntT p_in)
 {
 	IntT out = 0;
-	for(uint8_t i = sizeof(p_in) * 8; i--;)
+	for(uint8_t i = sizeof(IntT) * 8; i--;)
 	{
 		out |= (p_in & 1) << i; (p_in >>= 1);
 	}
