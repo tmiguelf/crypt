@@ -55,7 +55,7 @@ public:
 	}
 
 	template<core::_p::c_toPrint_char CharT>
-	inline void getPrint(CharT* p_out) const
+	inline void get_print(CharT* p_out) const
 	{
 		uintptr_t tsize = m_data.size();
 		if(tsize == 0) return;
