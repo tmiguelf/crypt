@@ -28,8 +28,8 @@
 #include <cstring>
 #include <limits>
 
-#include <CoreLib/Core_Type.hpp>
-#include <CoreLib/Core_Endian.hpp>
+#include <CoreLib/core_type.hpp>
+#include <CoreLib/core_endian.hpp>
 
 #include <Crypt/hash/sha2.hpp>
 

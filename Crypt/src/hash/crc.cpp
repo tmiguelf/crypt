@@ -28,9 +28,9 @@
 #include <array>
 #include <bit>
 
-#include <CoreLib/Core_Type.hpp>
-#include <CoreLib/Core_Endian.hpp>
-#include <CoreLib/Core_cpu.hpp>
+#include <CoreLib/core_type.hpp>
+#include <CoreLib/core_endian.hpp>
+#include <CoreLib/core_cpu.hpp>
 
 #include <Crypt/utils.hpp>
 

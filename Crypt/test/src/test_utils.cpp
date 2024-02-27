@@ -28,16 +28,16 @@
 #include <SCEF/SCEF.hpp>
 
 
-#include <CoreLib/Core_Console.hpp>
+#include <CoreLib/core_console.hpp>
 #include <CoreLib/toPrint/toPrint.hpp>
 #include <CoreLib/toPrint/toPrint_filesystem.hpp>
 #include <CoreLib/string/core_string_numeric.hpp>
 #include <CoreLib/string/core_string_encoding.hpp>
-#include <CoreLib/Core_File.hpp>
-#include <CoreLib/Core_OS.hpp>
+#include <CoreLib/core_file.hpp>
+#include <CoreLib/core_os.hpp>
 
 
-#define PrintOut(...) core_ToPrint(char8_t, core::cout, __VA_ARGS__)
+#define PrintOut(...) core::print<char8_t>(core::cout __VA_OPT__(,) __VA_ARGS__)
 
 
 namespace testUtils

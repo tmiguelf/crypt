@@ -31,7 +31,7 @@
 #include <string_view>
 #include <optional>
 
-#include <CoreLib/Core_Type.hpp>
+#include <CoreLib/core_type.hpp>
 #include <CoreLib/toPrint/toPrint.hpp>
 #include <CoreLib/toPrint/toPrint_std_ostream.hpp>
 
