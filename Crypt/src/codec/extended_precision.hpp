@@ -38,32 +38,42 @@
 #	error "Unsuported Architecture"
 #endif
 
+
+#if (defined(__GNUG__) || defined(__GNUC__))
+#	define FORCE_INLINE __attribute__((always_inline)) inline
+#elif (defined(_MSC_VER))
+#	define FORCE_INLINE __forceinline
+#else
+#	define FORCE_INLINE inline
+#endif
+
+
 namespace crypto
 {
 
 #ifdef _WIN32
-	static inline uint64_t umul(const uint64_t p_1, const uint64_t p_2, uint64_t& p_out_hi)
+	static FORCE_INLINE uint64_t umul(const uint64_t p_1, const uint64_t p_2, uint64_t& p_out_hi)
 	{
 		return _umul128(p_1, p_2, &p_out_hi);
 	}
 
-	static inline uint64_t udiv(const uint64_t p_hi, const uint64_t p_low, const uint64_t p_denom, uint64_t& p_rem)
+	static FORCE_INLINE uint64_t udiv(const uint64_t p_hi, const uint64_t p_low, const uint64_t p_denom, uint64_t& p_rem)
 	{
 		return _udiv128(p_hi, p_low, p_denom, &p_rem);
 	}
 
-	static inline uint8_t addcarry(const uint8_t p_carry, const uint64_t p_1, const uint64_t p_2, uint64_t& p_out)
+	static FORCE_INLINE uint8_t addcarry(const uint8_t p_carry, const uint64_t p_1, const uint64_t p_2, uint64_t& p_out)
 	{
 		return _addcarry_u64(p_carry, p_1, p_2, &p_out);
 	}
 
-	static inline uint8_t subborrow(const uint8_t p_borrow, const uint64_t p_1, const uint64_t p_2, uint64_t& p_out)
+	static FORCE_INLINE uint8_t subborrow(const uint8_t p_borrow, const uint64_t p_1, const uint64_t p_2, uint64_t& p_out)
 	{
 		return _subborrow_u64(p_borrow, p_1, p_2, &p_out);
 	}
 
 #else
-	static inline uint64_t umul(uint64_t p_1, const uint64_t p_2, uint64_t& p_out_hi)
+	static FORCE_INLINE uint64_t umul(uint64_t p_1, const uint64_t p_2, uint64_t& p_out_hi)
 	{
 		__asm__
 		(
@@ -74,7 +84,7 @@ namespace crypto
 		return p_1;
 	}
 
-	static inline uint64_t udiv(uint64_t p_hi, uint64_t p_low, const uint64_t p_denom, uint64_t& p_rem)
+	static FORCE_INLINE uint64_t udiv(uint64_t p_hi, uint64_t p_low, const uint64_t p_denom, uint64_t& p_rem)
 	{
 		__asm__
 		(
@@ -85,12 +95,12 @@ namespace crypto
 		return p_low;
 	}
 
-	static inline uint8_t addcarry(const uint8_t p_carry, const uint64_t p_1, const uint64_t p_2, uint64_t& p_out)
+	static FORCE_INLINE uint8_t addcarry(const uint8_t p_carry, const uint64_t p_1, const uint64_t p_2, uint64_t& p_out)
 	{
 		return _addcarry_u64(p_carry, p_1, p_2, reinterpret_cast<unsigned long long*>(&p_out));
 	}
 
-	static inline uint8_t subborrow(const uint8_t p_borrow, const uint64_t p_1, const uint64_t p_2, uint64_t& p_out)
+	static FORCE_INLINE uint8_t subborrow(const uint8_t p_borrow, const uint64_t p_1, const uint64_t p_2, uint64_t& p_out)
 	{
 		return _subborrow_u64(p_borrow, p_1, p_2, reinterpret_cast<unsigned long long*>(&p_out));
 	}
