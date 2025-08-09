@@ -53,7 +53,9 @@ public:
 	template<core::_p::c_toPrint_char CharT>
 	inline constexpr uintptr_t size(const CharT&) const
 	{
-		return (m_data.size() * 3) - 1;
+		uintptr_t tsize = m_data.size();
+		if (tsize == 0) return 0;
+		return (tsize * 3) - 1;
 	}
 
 	template<core::_p::c_toPrint_char CharT>
@@ -61,12 +63,12 @@ public:
 	{
 		uintptr_t tsize = m_data.size();
 		if(tsize == 0) return;
-		core::_p::to_chars_hex_fix_unsafe(m_data[0], p_out);
+		core::to_chars_hex_fix_unsafe(m_data[0], p_out);
 		p_out += 2;
 		for(uintptr_t i = 1; i < tsize; ++i)
 		{
 			*(p_out++) = ' ';
-			core::_p::to_chars_hex_fix_unsafe(m_data[i], p_out);
+			core::to_chars_hex_fix_unsafe(m_data[i], p_out);
 			p_out += 2;
 		}
 	}
