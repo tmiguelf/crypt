@@ -136,7 +136,7 @@ namespace crypto
 			return memcmp(p_1.data(), p_2.data(), sizeof(block_t)) == 0;
 		}
 
-#if 0
+#if !defined(_MSC_VER)
 		static void mpi_multiply(std::array<uint64_t, 17>& p_out, const block_t& p_1, const block_t& p_2)
 		{
 			block_t mid;
@@ -777,7 +777,7 @@ namespace crypto
 				carry = addcarry(carry, p_out[5], 0, p_out[5]);
 				carry = addcarry(carry, p_out[6], 0, p_out[6]);
 				carry = addcarry(carry, p_out[7], 0, p_out[7]);
-				        addcarry(carry, p_out[8], 0, p_out[8]);
+				p_out[8] += carry;
 			}
 		}
 
@@ -817,7 +817,7 @@ namespace crypto
 				borrow = subborrow(borrow, p_out[5], 0, p_out[5]);
 				borrow = subborrow(borrow, p_out[6], 0, p_out[6]);
 				borrow = subborrow(borrow, p_out[7], 0, p_out[7]);
-				         subborrow(borrow, p_out[8], 0, p_out[8]);
+				p_out[8] -= borrow;
 			}
 		}
 

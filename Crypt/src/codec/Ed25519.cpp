@@ -215,7 +215,7 @@ namespace crypto
 			p_out[7] += carry;
 		}
 
-#if 1
+
 		static void mpi_square(std::array<uint64_t, 8>& p_out, const block_t& p_in)
 		{
 			block_t mul_carries;
@@ -266,46 +266,7 @@ namespace crypto
 			        addcarry(carry, p_out[7], mul_carries[3], p_out[7]);
 
 		}
-#else
-		static void mpi_square(std::array<uint64_t, 8>& p_out, const block_t& p_in)
-		{
-			uint8_t carry;
-			uint64_t mul_carry;
 
-			p_out[1] = umul(p_in[0], p_in[1], p_out[2]);
-			carry = addcarry(0    , p_out[2], umul(p_in[0], p_in[2], p_out[3]), p_out[2]);
-			carry = addcarry(carry, p_out[3], umul(p_in[0], p_in[3], p_out[4]), p_out[3]);
-			p_out[4] += carry;
-
-			carry = addcarry(0    , p_out[3], umul(p_in[1], p_in[2], mul_carry), p_out[3]);
-			carry = addcarry(carry, p_out[4], umul(p_in[1], p_in[3], p_out[5] ), p_out[4]);
-			p_out[5] += carry;
-
-			carry = addcarry(0, p_out[4], mul_carry, p_out[4]);
-			p_out[5] += carry;
-
-			carry = addcarry(0, p_out[5], umul(p_in[2], p_in[3], p_out[6]), p_out[5]);
-			p_out[6] += carry;
-
-			//== Doubling ==
-			carry = addcarry(0    , p_out[1], p_out[1], p_out[1]);
-			carry = addcarry(carry, p_out[2], p_out[2], p_out[2]);
-			carry = addcarry(carry, p_out[3], p_out[3], p_out[3]);
-			carry = addcarry(carry, p_out[4], p_out[4], p_out[4]);
-			carry = addcarry(carry, p_out[5], p_out[5], p_out[5]);
-			p_out[7] = addcarry(carry, p_out[6], p_out[6], p_out[6]);
-
-			//-- singles
-			p_out[0] = umul(p_in[0], p_in[0], mul_carry);
-			carry = addcarry(0, p_out[1], mul_carry, p_out[1]);
-			carry = addcarry(carry, p_out[2], umul(p_in[1], p_in[1], mul_carry), p_out[2]);
-			carry = addcarry(carry, p_out[3], mul_carry, p_out[3]);
-			carry = addcarry(carry, p_out[4], umul(p_in[2], p_in[2], mul_carry), p_out[4]);
-			carry = addcarry(carry, p_out[5], mul_carry, p_out[5]);
-			carry = addcarry(carry, p_out[6], umul(p_in[3], p_in[3], mul_carry), p_out[6]);
-			addcarry(carry, p_out[7], mul_carry, p_out[7]);
-		}
-#endif
 
 		static void mod_increment(block_t& p_out)
 		{
@@ -324,20 +285,12 @@ namespace crypto
 			}
 			else
 			{
-#if 0
-				++p_out[0] = p_in[0] + 1
-				uint8_t carry;
-				carry = addcarry(1, p_in[0], 0, p_out[0]);
-				carry = addcarry(carry, p_in[1], 0, p_out[1]);
-				carry = addcarry(carry, p_in[2], 0, p_out[2]);
-				addcarry(carry, p_in[3], 0, p_out[3]);
-#else
+
 				uint8_t carry;
 				carry = addcarry(1    , p_out[0], 0, p_out[0]);
 				carry = addcarry(carry, p_out[1], 0, p_out[1]);
 				carry = addcarry(carry, p_out[2], 0, p_out[2]);
-				        addcarry(carry, p_out[3], 0, p_out[3]);
-#endif
+				p_out[3] += carry;
 			}
 		}
 
@@ -362,7 +315,7 @@ namespace crypto
 				borrow = subborrow(1     , p_out[0], 0, p_out[0]);
 				borrow = subborrow(borrow, p_out[1], 0, p_out[1]);
 				borrow = subborrow(borrow, p_out[2], 0, p_out[2]);
-				         subborrow(borrow, p_out[3], 0, p_out[3]);
+				p_out[3] -= borrow;
 			}
 		}
 
