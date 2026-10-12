@@ -42,8 +42,8 @@
 #include <test_utils.hpp>
 
 
-using core::literals::operator "" _ui32;
-using core::literals::operator "" _ui64;
+using core::literals::operator ""_ui32;
+using core::literals::operator ""_ui64;
 
 TEST(Hash, CRC_32C)
 {

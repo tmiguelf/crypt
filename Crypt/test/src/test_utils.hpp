@@ -51,9 +51,9 @@ public:
 	}
 
 	template<core::_p::c_toPrint_char CharT>
-	inline constexpr uintptr_t size(const CharT&) const
+	inline constexpr uintptr_t size(CharT const&) const
 	{
-		uintptr_t tsize = m_data.size();
+		uintptr_t const tsize = m_data.size();
 		if (tsize == 0) return 0;
 		return (tsize * 3) - 1;
 	}

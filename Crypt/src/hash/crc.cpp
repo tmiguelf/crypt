@@ -44,9 +44,9 @@
 namespace crypto
 {
 
-using core::literals::operator "" _ui32;
-using core::literals::operator "" _ui64;
-using core::literals::operator "" _uip;
+using core::literals::operator ""_ui32;
+using core::literals::operator ""_ui64;
+using core::literals::operator ""_uip;
 
 
 template<typename IntT>

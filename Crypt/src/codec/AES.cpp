@@ -38,7 +38,7 @@
 
 namespace crypto
 {
-	using core::literals::operator "" _ui8;
+	using core::literals::operator ""_ui8;
 
 	static constexpr std::array<uint8_t, 256> invert_s_box(const std::array<uint8_t, 256>& p_s_box)
 	{
@@ -603,9 +603,4 @@ namespace crypto
 	{
 		AES_Help::decode<AES_256>(p_wkey, p_input, p_out);
 	}
-
-
-
 }
-
-
