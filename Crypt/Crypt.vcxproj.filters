@@ -53,9 +53,6 @@
     <ClInclude Include="include\Crypt\codec\ECC.hpp">
       <Filter>Header Files\codec</Filter>
     </ClInclude>
-    <ClInclude Include="src\codec\extended_precision.hpp">
-      <Filter>Source Files\codec</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\hash\crc.cpp">

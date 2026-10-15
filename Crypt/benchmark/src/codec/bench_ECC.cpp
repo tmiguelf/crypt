@@ -33,7 +33,6 @@
 
 #include <Crypt/codec/ECC.hpp>
 
-
 static inline void Ed25519_compute(benchmark::State& state)
 {
 	crypto::Ed25519::key_t t_key;
@@ -50,7 +49,6 @@ static inline void Ed25519_compute(benchmark::State& state)
 }
 
 BENCHMARK(Ed25519_compute);
-
 
 static inline void Ed521_compute(benchmark::State& state)
 {

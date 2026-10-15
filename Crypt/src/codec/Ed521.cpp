@@ -31,15 +31,9 @@
 #include <limits>
 
 #include <CoreLib/core_type.hpp>
+#include <CoreLib/core_wide_arithmetic.hpp>
 
 #include <Crypt/hash/sha2.hpp>
-
-#include "extended_precision.hpp"
-
-
-#if !defined(_M_AMD64) && !defined(__amd64__)
-#	error "Unsuported Architecture"
-#endif
 
 namespace crypto
 {
@@ -136,617 +130,459 @@ namespace crypto
 			return memcmp(p_1.data(), p_2.data(), sizeof(block_t)) == 0;
 		}
 
-#if !defined(_MSC_VER)
 		static void mpi_multiply(std::array<uint64_t, 17>& p_out, const block_t& p_1, const block_t& p_2)
 		{
-			block_t mid;
-			std::array<uint64_t, 8> mul_carries;
-			uint8_t carry;
+			std::array<core::widening_mul_result<uint64_t>, 9> mul_res;
+			core::carrying_add_result<uint64_t> add_res;
 
-			p_out[0] = umul(p_1[0], p_2[0], mul_carries[0]);
-			p_out[1] = umul(p_1[0], p_2[1], mul_carries[1]);
-			p_out[2] = umul(p_1[0], p_2[2], mul_carries[2]);
-			p_out[3] = umul(p_1[0], p_2[3], mul_carries[3]);
-			p_out[4] = umul(p_1[0], p_2[4], mul_carries[4]);
-			p_out[5] = umul(p_1[0], p_2[5], mul_carries[5]);
-			p_out[6] = umul(p_1[0], p_2[6], mul_carries[6]);
-			p_out[7] = umul(p_1[0], p_2[7], mul_carries[7]);
-			p_out[8] = umul(p_1[0], p_2[8], p_out[9]);
+			mul_res[0] = core::widening_mul<uint64_t>(p_1[0], p_2[0]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_1[0], p_2[1]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_1[0], p_2[2]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_1[0], p_2[3]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_1[0], p_2[4]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_1[0], p_2[5]);
+			mul_res[6] = core::widening_mul<uint64_t>(p_1[0], p_2[6]);
+			mul_res[7] = core::widening_mul<uint64_t>(p_1[0], p_2[7]);
+			mul_res[8] = core::widening_mul<uint64_t>(p_1[0], p_2[8]);
 
-			carry = addcarry(0    , p_out[1], mul_carries[0], p_out[1]);
-			carry = addcarry(carry, p_out[2], mul_carries[1], p_out[2]);
-			carry = addcarry(carry, p_out[3], mul_carries[2], p_out[3]);
-			carry = addcarry(carry, p_out[4], mul_carries[3], p_out[4]);
-			carry = addcarry(carry, p_out[5], mul_carries[4], p_out[5]);
-			carry = addcarry(carry, p_out[6], mul_carries[5], p_out[6]);
-			carry = addcarry(carry, p_out[7], mul_carries[6], p_out[7]);
-			carry = addcarry(carry, p_out[8], mul_carries[7], p_out[8]);
-			p_out[9] += carry;
+			p_out[0] = mul_res[0].low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[0].high_bits, mul_res[1].low_bits, false);            p_out[1] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[1].high_bits, mul_res[2].low_bits, add_res.overflow); p_out[2] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[2].high_bits, mul_res[3].low_bits, add_res.overflow); p_out[3] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[3].high_bits, mul_res[4].low_bits, add_res.overflow); p_out[4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[4].high_bits, mul_res[5].low_bits, add_res.overflow); p_out[5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[5].high_bits, mul_res[6].low_bits, add_res.overflow); p_out[6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[6].high_bits, mul_res[7].low_bits, add_res.overflow); p_out[7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[7].high_bits, mul_res[8].low_bits, add_res.overflow); p_out[8] = add_res.low_bits;
+			p_out[9] = mul_res[8].high_bits + add_res.overflow;
 
+			mul_res[0] = core::widening_mul<uint64_t>(p_1[1], p_2[0]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_1[1], p_2[1]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_1[1], p_2[2]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_1[1], p_2[3]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_1[1], p_2[4]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_1[1], p_2[5]);
+			mul_res[6] = core::widening_mul<uint64_t>(p_1[1], p_2[6]);
+			mul_res[7] = core::widening_mul<uint64_t>(p_1[1], p_2[7]);
+			mul_res[8] = core::widening_mul<uint64_t>(p_1[1], p_2[8]);
 
-			mid[0] = umul(p_1[1], p_2[0], mul_carries[0]);
-			mid[1] = umul(p_1[1], p_2[1], mul_carries[1]);
-			mid[2] = umul(p_1[1], p_2[2], mul_carries[2]);
-			mid[3] = umul(p_1[1], p_2[3], mul_carries[3]);
-			mid[4] = umul(p_1[1], p_2[4], mul_carries[4]);
-			mid[5] = umul(p_1[1], p_2[5], mul_carries[5]);
-			mid[6] = umul(p_1[1], p_2[6], mul_carries[6]);
-			mid[7] = umul(p_1[1], p_2[7], mul_carries[7]);
-			mid[8] = umul(p_1[1], p_2[8], p_out[10]);
+			add_res = core::carrying_add<uint64_t>(p_out[1], mul_res[0].low_bits, false);            p_out[1] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[2], mul_res[1].low_bits, add_res.overflow); p_out[2] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[3], mul_res[2].low_bits, add_res.overflow); p_out[3] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[4], mul_res[3].low_bits, add_res.overflow); p_out[4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[5], mul_res[4].low_bits, add_res.overflow); p_out[5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[6], mul_res[5].low_bits, add_res.overflow); p_out[6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[7], mul_res[6].low_bits, add_res.overflow); p_out[7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[8], mul_res[7].low_bits, add_res.overflow); p_out[8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[9], mul_res[8].low_bits, add_res.overflow); p_out[9] = add_res.low_bits;
+			p_out[10] = mul_res[8].high_bits + add_res.overflow;
 
-			carry = addcarry(0    , p_out[1], mid[0], p_out[1]);
-			carry = addcarry(carry, p_out[2], mid[1], p_out[2]);
-			carry = addcarry(carry, p_out[3], mid[2], p_out[3]);
-			carry = addcarry(carry, p_out[4], mid[3], p_out[4]);
-			carry = addcarry(carry, p_out[5], mid[4], p_out[5]);
-			carry = addcarry(carry, p_out[6], mid[5], p_out[6]);
-			carry = addcarry(carry, p_out[7], mid[6], p_out[7]);
-			carry = addcarry(carry, p_out[8], mid[7], p_out[8]);
-			carry = addcarry(carry, p_out[9], mid[8], p_out[9]);
-			p_out[10] += carry;
+			add_res = core::carrying_add<uint64_t>(p_out[2], mul_res[0].high_bits, false);            p_out[2] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[3], mul_res[1].high_bits, add_res.overflow); p_out[3] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[4], mul_res[2].high_bits, add_res.overflow); p_out[4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[5], mul_res[3].high_bits, add_res.overflow); p_out[5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[6], mul_res[4].high_bits, add_res.overflow); p_out[6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[7], mul_res[5].high_bits, add_res.overflow); p_out[7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[8], mul_res[6].high_bits, add_res.overflow); p_out[8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[9], mul_res[7].high_bits, add_res.overflow); p_out[9] = add_res.low_bits;
+			p_out[10] += add_res.overflow;
 
-			carry = addcarry(0    , p_out[2], mul_carries[0], p_out[2]);
-			carry = addcarry(carry, p_out[3], mul_carries[1], p_out[3]);
-			carry = addcarry(carry, p_out[4], mul_carries[2], p_out[4]);
-			carry = addcarry(carry, p_out[5], mul_carries[3], p_out[5]);
-			carry = addcarry(carry, p_out[6], mul_carries[4], p_out[6]);
-			carry = addcarry(carry, p_out[7], mul_carries[5], p_out[7]);
-			carry = addcarry(carry, p_out[8], mul_carries[6], p_out[8]);
-			carry = addcarry(carry, p_out[9], mul_carries[7], p_out[9]);
-			p_out[10] += carry;
+			mul_res[0] = core::widening_mul<uint64_t>(p_1[2], p_2[0]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_1[2], p_2[1]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_1[2], p_2[2]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_1[2], p_2[3]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_1[2], p_2[4]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_1[2], p_2[5]);
+			mul_res[6] = core::widening_mul<uint64_t>(p_1[2], p_2[6]);
+			mul_res[7] = core::widening_mul<uint64_t>(p_1[2], p_2[7]);
+			mul_res[8] = core::widening_mul<uint64_t>(p_1[2], p_2[8]);
 
+			add_res = core::carrying_add<uint64_t>(p_out[ 2], mul_res[0].low_bits, false);            p_out[ 2] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 3], mul_res[1].low_bits, add_res.overflow); p_out[ 3] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 4], mul_res[2].low_bits, add_res.overflow); p_out[ 4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 5], mul_res[3].low_bits, add_res.overflow); p_out[ 5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], mul_res[4].low_bits, add_res.overflow); p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[5].low_bits, add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[6].low_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[7].low_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[8].low_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			p_out[11] = mul_res[8].high_bits + add_res.overflow;
 
-			mid[0] = umul(p_1[2], p_2[0], mul_carries[0]);
-			mid[1] = umul(p_1[2], p_2[1], mul_carries[1]);
-			mid[2] = umul(p_1[2], p_2[2], mul_carries[2]);
-			mid[3] = umul(p_1[2], p_2[3], mul_carries[3]);
-			mid[4] = umul(p_1[2], p_2[4], mul_carries[4]);
-			mid[5] = umul(p_1[2], p_2[5], mul_carries[5]);
-			mid[6] = umul(p_1[2], p_2[6], mul_carries[6]);
-			mid[7] = umul(p_1[2], p_2[7], mul_carries[7]);
-			mid[8] = umul(p_1[2], p_2[8], p_out[11]);
+			add_res = core::carrying_add<uint64_t>(p_out[ 3], mul_res[0].high_bits, false);            p_out[ 3] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 4], mul_res[1].high_bits, add_res.overflow); p_out[ 4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 5], mul_res[2].high_bits, add_res.overflow); p_out[ 5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], mul_res[3].high_bits, add_res.overflow); p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[4].high_bits, add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[5].high_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[6].high_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[7].high_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			p_out[11] += add_res.overflow;
 
-			carry = addcarry(0    , p_out[ 2], mid[0], p_out[ 2]);
-			carry = addcarry(carry, p_out[ 3], mid[1], p_out[ 3]);
-			carry = addcarry(carry, p_out[ 4], mid[2], p_out[ 4]);
-			carry = addcarry(carry, p_out[ 5], mid[3], p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], mid[4], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mid[5], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mid[6], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[7], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[8], p_out[10]);
-			p_out[11] += carry;
+			mul_res[0] = core::widening_mul<uint64_t>(p_1[3], p_2[0]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_1[3], p_2[1]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_1[3], p_2[2]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_1[3], p_2[3]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_1[3], p_2[4]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_1[3], p_2[5]);
+			mul_res[6] = core::widening_mul<uint64_t>(p_1[3], p_2[6]);
+			mul_res[7] = core::widening_mul<uint64_t>(p_1[3], p_2[7]);
+			mul_res[8] = core::widening_mul<uint64_t>(p_1[3], p_2[8]);
 
-			carry = addcarry(0    , p_out[ 3], mul_carries[0], p_out[ 3]);
-			carry = addcarry(carry, p_out[ 4], mul_carries[1], p_out[ 4]);
-			carry = addcarry(carry, p_out[ 5], mul_carries[2], p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], mul_carries[3], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mul_carries[4], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mul_carries[5], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mul_carries[6], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mul_carries[7], p_out[10]);
-			p_out[11] += carry;
+			add_res = core::carrying_add<uint64_t>(p_out[ 3], mul_res[0].low_bits, false);            p_out[ 3] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 4], mul_res[1].low_bits, add_res.overflow); p_out[ 4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 5], mul_res[2].low_bits, add_res.overflow); p_out[ 5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], mul_res[3].low_bits, add_res.overflow); p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[4].low_bits, add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[5].low_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[6].low_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[7].low_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[8].low_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			p_out[12] = mul_res[8].high_bits + add_res.overflow;
 
+			add_res = core::carrying_add<uint64_t>(p_out[ 4], mul_res[0].high_bits, false);            p_out[ 4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 5], mul_res[1].high_bits, add_res.overflow); p_out[ 5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], mul_res[2].high_bits, add_res.overflow); p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[3].high_bits, add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[4].high_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[5].high_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[6].high_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[7].high_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			p_out[12] += add_res.overflow;
 
-			mid[0] = umul(p_1[3], p_2[0], mul_carries[0]);
-			mid[1] = umul(p_1[3], p_2[1], mul_carries[1]);
-			mid[2] = umul(p_1[3], p_2[2], mul_carries[2]);
-			mid[3] = umul(p_1[3], p_2[3], mul_carries[3]);
-			mid[4] = umul(p_1[3], p_2[4], mul_carries[4]);
-			mid[5] = umul(p_1[3], p_2[5], mul_carries[5]);
-			mid[6] = umul(p_1[3], p_2[6], mul_carries[6]);
-			mid[7] = umul(p_1[3], p_2[7], mul_carries[7]);
-			mid[8] = umul(p_1[3], p_2[8], p_out[12]);
+			mul_res[0] = core::widening_mul<uint64_t>(p_1[4], p_2[0]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_1[4], p_2[1]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_1[4], p_2[2]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_1[4], p_2[3]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_1[4], p_2[4]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_1[4], p_2[5]);
+			mul_res[6] = core::widening_mul<uint64_t>(p_1[4], p_2[6]);
+			mul_res[7] = core::widening_mul<uint64_t>(p_1[4], p_2[7]);
+			mul_res[8] = core::widening_mul<uint64_t>(p_1[4], p_2[8]);
 
-			carry = addcarry(0    , p_out[ 3], mid[0], p_out[ 3]);
-			carry = addcarry(carry, p_out[ 4], mid[1], p_out[ 4]);
-			carry = addcarry(carry, p_out[ 5], mid[2], p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], mid[3], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mid[4], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mid[5], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[6], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[7], p_out[10]);
-			carry = addcarry(carry, p_out[11], mid[8], p_out[11]);
-			p_out[12] += carry;
+			add_res = core::carrying_add<uint64_t>(p_out[ 4], mul_res[0].low_bits, false);            p_out[ 4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 5], mul_res[1].low_bits, add_res.overflow); p_out[ 5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], mul_res[2].low_bits, add_res.overflow); p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[3].low_bits, add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[4].low_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[5].low_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[6].low_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[7].low_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[8].low_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			p_out[13] = mul_res[8].high_bits + add_res.overflow;
 
-			carry = addcarry(0    , p_out[ 4], mul_carries[0], p_out[ 4]);
-			carry = addcarry(carry, p_out[ 5], mul_carries[1], p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], mul_carries[2], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mul_carries[3], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mul_carries[4], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mul_carries[5], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mul_carries[6], p_out[10]);
-			carry = addcarry(carry, p_out[11], mul_carries[7], p_out[11]);
-			p_out[12] += carry;
+			add_res = core::carrying_add<uint64_t>(p_out[ 5], mul_res[0].high_bits, false);            p_out[ 5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], mul_res[1].high_bits, add_res.overflow); p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[2].high_bits, add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[3].high_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[4].high_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[5].high_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[6].high_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[7].high_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			p_out[13] += add_res.overflow;
 
+			mul_res[0] = core::widening_mul<uint64_t>(p_1[5], p_2[0]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_1[5], p_2[1]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_1[5], p_2[2]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_1[5], p_2[3]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_1[5], p_2[4]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_1[5], p_2[5]);
+			mul_res[6] = core::widening_mul<uint64_t>(p_1[5], p_2[6]);
+			mul_res[7] = core::widening_mul<uint64_t>(p_1[5], p_2[7]);
+			mul_res[8] = core::widening_mul<uint64_t>(p_1[5], p_2[8]);
 
-			mid[0] = umul(p_1[4], p_2[0], mul_carries[0]);
-			mid[1] = umul(p_1[4], p_2[1], mul_carries[1]);
-			mid[2] = umul(p_1[4], p_2[2], mul_carries[2]);
-			mid[3] = umul(p_1[4], p_2[3], mul_carries[3]);
-			mid[4] = umul(p_1[4], p_2[4], mul_carries[4]);
-			mid[5] = umul(p_1[4], p_2[5], mul_carries[5]);
-			mid[6] = umul(p_1[4], p_2[6], mul_carries[6]);
-			mid[7] = umul(p_1[4], p_2[7], mul_carries[7]);
-			mid[8] = umul(p_1[4], p_2[8], p_out[13]);
+			add_res = core::carrying_add<uint64_t>(p_out[ 5], mul_res[0].low_bits, false);            p_out[ 5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], mul_res[1].low_bits, add_res.overflow); p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[2].low_bits, add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[3].low_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[4].low_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[5].low_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[6].low_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[7].low_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[13], mul_res[8].low_bits, add_res.overflow); p_out[13] = add_res.low_bits;
+			p_out[14] = mul_res[8].high_bits + add_res.overflow;
 
-			carry = addcarry(0    , p_out[ 4], mid[0], p_out[ 4]);
-			carry = addcarry(carry, p_out[ 5], mid[1], p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], mid[2], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mid[3], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mid[4], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[5], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[6], p_out[10]);
-			carry = addcarry(carry, p_out[11], mid[7], p_out[11]);
-			carry = addcarry(carry, p_out[12], mid[8], p_out[12]);
-			p_out[13] += carry;
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], mul_res[0].high_bits, false);            p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[1].high_bits, add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[2].high_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[3].high_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[4].high_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[5].high_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[6].high_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[13], mul_res[7].high_bits, add_res.overflow); p_out[13] = add_res.low_bits;
+			p_out[14] += add_res.overflow;
 
-			carry = addcarry(0    , p_out[ 5], mul_carries[0], p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], mul_carries[1], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mul_carries[2], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mul_carries[3], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mul_carries[4], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mul_carries[5], p_out[10]);
-			carry = addcarry(carry, p_out[11], mul_carries[6], p_out[11]);
-			carry = addcarry(carry, p_out[12], mul_carries[7], p_out[12]);
-			p_out[13] += carry;
+			mul_res[0] = core::widening_mul<uint64_t>(p_1[6], p_2[0]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_1[6], p_2[1]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_1[6], p_2[2]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_1[6], p_2[3]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_1[6], p_2[4]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_1[6], p_2[5]);
+			mul_res[6] = core::widening_mul<uint64_t>(p_1[6], p_2[6]);
+			mul_res[7] = core::widening_mul<uint64_t>(p_1[6], p_2[7]);
+			mul_res[8] = core::widening_mul<uint64_t>(p_1[6], p_2[8]);
 
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], mul_res[0].low_bits, false);            p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[1].low_bits, add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[2].low_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[3].low_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[4].low_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[5].low_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[6].low_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[13], mul_res[7].low_bits, add_res.overflow); p_out[13] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[14], mul_res[8].low_bits, add_res.overflow); p_out[14] = add_res.low_bits;
+			p_out[15] = mul_res[8].high_bits + add_res.overflow;
 
-			mid[0] = umul(p_1[5], p_2[0], mul_carries[0]);
-			mid[1] = umul(p_1[5], p_2[1], mul_carries[1]);
-			mid[2] = umul(p_1[5], p_2[2], mul_carries[2]);
-			mid[3] = umul(p_1[5], p_2[3], mul_carries[3]);
-			mid[4] = umul(p_1[5], p_2[4], mul_carries[4]);
-			mid[5] = umul(p_1[5], p_2[5], mul_carries[5]);
-			mid[6] = umul(p_1[5], p_2[6], mul_carries[6]);
-			mid[7] = umul(p_1[5], p_2[7], mul_carries[7]);
-			mid[8] = umul(p_1[5], p_2[8], p_out[14]);
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[0].high_bits, false);            p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[1].high_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[2].high_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[3].high_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[4].high_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[5].high_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[13], mul_res[6].high_bits, add_res.overflow); p_out[13] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[14], mul_res[7].high_bits, add_res.overflow); p_out[14] = add_res.low_bits;
+			p_out[15] += add_res.overflow;
 
-			carry = addcarry(0    , p_out[ 5], mid[0], p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], mid[1], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mid[2], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mid[3], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[4], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[5], p_out[10]);
-			carry = addcarry(carry, p_out[11], mid[6], p_out[11]);
-			carry = addcarry(carry, p_out[12], mid[7], p_out[12]);
-			carry = addcarry(carry, p_out[13], mid[8], p_out[13]);
-			p_out[14] += carry;
+			mul_res[0] = core::widening_mul<uint64_t>(p_1[7], p_2[0]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_1[7], p_2[1]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_1[7], p_2[2]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_1[7], p_2[3]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_1[7], p_2[4]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_1[7], p_2[5]);
+			mul_res[6] = core::widening_mul<uint64_t>(p_1[7], p_2[6]);
+			mul_res[7] = core::widening_mul<uint64_t>(p_1[7], p_2[7]);
+			mul_res[8] = core::widening_mul<uint64_t>(p_1[7], p_2[8]);
 
-			carry = addcarry(0    , p_out[ 6], mul_carries[0], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mul_carries[1], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mul_carries[2], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mul_carries[3], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mul_carries[4], p_out[10]);
-			carry = addcarry(carry, p_out[11], mul_carries[5], p_out[11]);
-			carry = addcarry(carry, p_out[12], mul_carries[6], p_out[12]);
-			carry = addcarry(carry, p_out[13], mul_carries[7], p_out[13]);
-			p_out[14] += carry;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[0].low_bits, false);            p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[1].low_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[2].low_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[3].low_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[4].low_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[5].low_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[13], mul_res[6].low_bits, add_res.overflow); p_out[13] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[14], mul_res[7].low_bits, add_res.overflow); p_out[14] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[15], mul_res[8].low_bits, add_res.overflow); p_out[15] = add_res.low_bits;
+			p_out[16] = mul_res[8].high_bits + add_res.overflow;
 
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[0].high_bits, false);            p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[1].high_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[2].high_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[3].high_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[4].high_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[13], mul_res[5].high_bits, add_res.overflow); p_out[13] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[14], mul_res[6].high_bits, add_res.overflow); p_out[14] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[15], mul_res[7].high_bits, add_res.overflow); p_out[15] = add_res.low_bits;
+			p_out[16] += add_res.overflow;
 
-			mid[0] = umul(p_1[6], p_2[0], mul_carries[0]);
-			mid[1] = umul(p_1[6], p_2[1], mul_carries[1]);
-			mid[2] = umul(p_1[6], p_2[2], mul_carries[2]);
-			mid[3] = umul(p_1[6], p_2[3], mul_carries[3]);
-			mid[4] = umul(p_1[6], p_2[4], mul_carries[4]);
-			mid[5] = umul(p_1[6], p_2[5], mul_carries[5]);
-			mid[6] = umul(p_1[6], p_2[6], mul_carries[6]);
-			mid[7] = umul(p_1[6], p_2[7], mul_carries[7]);
-			mid[8] = umul(p_1[6], p_2[8], p_out[15]);
+			mul_res[0] = core::widening_mul<uint64_t>(p_1[8], p_2[0]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_1[8], p_2[1]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_1[8], p_2[2]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_1[8], p_2[3]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_1[8], p_2[4]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_1[8], p_2[5]);
+			mul_res[6] = core::widening_mul<uint64_t>(p_1[8], p_2[6]);
+			mul_res[7] = core::widening_mul<uint64_t>(p_1[8], p_2[7]);
+			mul_res[8] = core::widening_mul<uint64_t>(p_1[8], p_2[8]);
 
-			carry = addcarry(0    , p_out[ 6], mid[0], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mid[1], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mid[2], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[3], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[4], p_out[10]);
-			carry = addcarry(carry, p_out[11], mid[5], p_out[11]);
-			carry = addcarry(carry, p_out[12], mid[6], p_out[12]);
-			carry = addcarry(carry, p_out[13], mid[7], p_out[13]);
-			carry = addcarry(carry, p_out[14], mid[8], p_out[14]);
-			p_out[15] += carry;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[0].low_bits, false);            p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[1].low_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[2].low_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[3].low_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[4].low_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[13], mul_res[5].low_bits, add_res.overflow); p_out[13] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[14], mul_res[6].low_bits, add_res.overflow); p_out[14] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[15], mul_res[7].low_bits, add_res.overflow); p_out[15] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[16], mul_res[8].low_bits, add_res.overflow); p_out[16] = add_res.low_bits;
 
-			carry = addcarry(0    , p_out[ 7], mul_carries[0], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mul_carries[1], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mul_carries[2], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mul_carries[3], p_out[10]);
-			carry = addcarry(carry, p_out[11], mul_carries[4], p_out[11]);
-			carry = addcarry(carry, p_out[12], mul_carries[5], p_out[12]);
-			carry = addcarry(carry, p_out[13], mul_carries[6], p_out[13]);
-			carry = addcarry(carry, p_out[14], mul_carries[7], p_out[14]);
-			p_out[15] += carry;
-
-			mid[0] = umul(p_1[7], p_2[0], mul_carries[0]);
-			mid[1] = umul(p_1[7], p_2[1], mul_carries[1]);
-			mid[2] = umul(p_1[7], p_2[2], mul_carries[2]);
-			mid[3] = umul(p_1[7], p_2[3], mul_carries[3]);
-			mid[4] = umul(p_1[7], p_2[4], mul_carries[4]);
-			mid[5] = umul(p_1[7], p_2[5], mul_carries[5]);
-			mid[6] = umul(p_1[7], p_2[6], mul_carries[6]);
-			mid[7] = umul(p_1[7], p_2[7], mul_carries[7]);
-			mid[8] = umul(p_1[7], p_2[8], p_out[16]);
-
-			carry = addcarry(0    , p_out[ 7], mid[0], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mid[1], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[2], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[3], p_out[10]);
-			carry = addcarry(carry, p_out[11], mid[4], p_out[11]);
-			carry = addcarry(carry, p_out[12], mid[5], p_out[12]);
-			carry = addcarry(carry, p_out[13], mid[6], p_out[13]);
-			carry = addcarry(carry, p_out[14], mid[7], p_out[14]);
-			carry = addcarry(carry, p_out[15], mid[8], p_out[15]);
-			p_out[16] += carry;
-
-			carry = addcarry(0    , p_out[ 8], mul_carries[0], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mul_carries[1], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mul_carries[2], p_out[10]);
-			carry = addcarry(carry, p_out[11], mul_carries[3], p_out[11]);
-			carry = addcarry(carry, p_out[12], mul_carries[4], p_out[12]);
-			carry = addcarry(carry, p_out[13], mul_carries[5], p_out[13]);
-			carry = addcarry(carry, p_out[14], mul_carries[6], p_out[14]);
-			carry = addcarry(carry, p_out[15], mul_carries[7], p_out[15]);
-			p_out[16] += carry;
-
-
-			mid[0] = umul(p_1[8], p_2[0], mul_carries[0]);
-			mid[1] = umul(p_1[8], p_2[1], mul_carries[1]);
-			mid[2] = umul(p_1[8], p_2[2], mul_carries[2]);
-			mid[3] = umul(p_1[8], p_2[3], mul_carries[3]);
-			mid[4] = umul(p_1[8], p_2[4], mul_carries[4]);
-			mid[5] = umul(p_1[8], p_2[5], mul_carries[5]);
-			mid[6] = umul(p_1[8], p_2[6], mul_carries[6]);
-			mid[7] = umul(p_1[8], p_2[7], mul_carries[7]);
-			mid[8] = p_1[8] * p_2[8];
-
-			carry = addcarry(0    , p_out[ 8], mid[0], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[1], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[2], p_out[10]);
-			carry = addcarry(carry, p_out[11], mid[3], p_out[11]);
-			carry = addcarry(carry, p_out[12], mid[4], p_out[12]);
-			carry = addcarry(carry, p_out[13], mid[5], p_out[13]);
-			carry = addcarry(carry, p_out[14], mid[6], p_out[14]);
-			carry = addcarry(carry, p_out[15], mid[7], p_out[15]);
-			        addcarry(carry, p_out[16], mid[8], p_out[16]);
-
-			carry = addcarry(0    , p_out[ 9], mul_carries[0], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mul_carries[1], p_out[10]);
-			carry = addcarry(carry, p_out[11], mul_carries[2], p_out[11]);
-			carry = addcarry(carry, p_out[12], mul_carries[3], p_out[12]);
-			carry = addcarry(carry, p_out[13], mul_carries[4], p_out[13]);
-			carry = addcarry(carry, p_out[14], mul_carries[5], p_out[14]);
-			carry = addcarry(carry, p_out[15], mul_carries[6], p_out[15]);
-			        addcarry(carry, p_out[16], mul_carries[7], p_out[16]);
-
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[0].high_bits, false);            p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[1].high_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[2].high_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[3].high_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[13], mul_res[4].high_bits, add_res.overflow); p_out[13] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[14], mul_res[5].high_bits, add_res.overflow); p_out[14] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[15], mul_res[6].high_bits, add_res.overflow); p_out[15] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[16], mul_res[7].high_bits, add_res.overflow); p_out[16] = add_res.low_bits;
 		}
-#else
-		static void mpi_multiply(std::array<uint64_t, 17>& p_out, const block_t& p_1, const block_t& p_2)
-		{
-			block_t mid;
-			uint64_t mul_carry;
-			uint64_t mul_carry2;
-			uint8_t carry;
-
-			p_out[0] = umul(p_1[0], p_2[0], mul_carry);
-			carry = addcarry(0    , umul(p_1[0], p_2[1], mul_carry2), mul_carry , p_out[1]);
-			carry = addcarry(carry, umul(p_1[0], p_2[2], mul_carry ), mul_carry2, p_out[2]);
-			carry = addcarry(carry, umul(p_1[0], p_2[3], mul_carry2), mul_carry , p_out[3]);
-			carry = addcarry(carry, umul(p_1[0], p_2[4], mul_carry ), mul_carry2, p_out[4]);
-			carry = addcarry(carry, umul(p_1[0], p_2[5], mul_carry2), mul_carry , p_out[5]);
-			carry = addcarry(carry, umul(p_1[0], p_2[6], mul_carry ), mul_carry2, p_out[6]);
-			carry = addcarry(carry, umul(p_1[0], p_2[7], mul_carry2), mul_carry , p_out[7]);
-			carry = addcarry(carry, umul(p_1[0], p_2[8], p_out[9]  ), mul_carry2, p_out[8]);
-			p_out[9] += carry;
-
-			mid[0] = umul(p_1[1], p_2[0], mul_carry);
-			carry = addcarry(0    , umul(p_1[1], p_2[1], mul_carry2), mul_carry , mid[1]);
-			carry = addcarry(carry, umul(p_1[1], p_2[2], mul_carry ), mul_carry2, mid[2]);
-			carry = addcarry(carry, umul(p_1[1], p_2[3], mul_carry2), mul_carry , mid[3]);
-			carry = addcarry(carry, umul(p_1[1], p_2[4], mul_carry ), mul_carry2, mid[4]);
-			carry = addcarry(carry, umul(p_1[1], p_2[5], mul_carry2), mul_carry , mid[5]);
-			carry = addcarry(carry, umul(p_1[1], p_2[6], mul_carry ), mul_carry2, mid[6]);
-			carry = addcarry(carry, umul(p_1[1], p_2[7], mul_carry2), mul_carry , mid[7]);
-			carry = addcarry(carry, umul(p_1[1], p_2[8], p_out[10] ), mul_carry2, mid[8]);
-			p_out[10] += carry;
-
-			carry = addcarry(0    , p_out[1], mid[0], p_out[1]);
-			carry = addcarry(carry, p_out[2], mid[1], p_out[2]);
-			carry = addcarry(carry, p_out[3], mid[2], p_out[3]);
-			carry = addcarry(carry, p_out[4], mid[3], p_out[4]);
-			carry = addcarry(carry, p_out[5], mid[4], p_out[5]);
-			carry = addcarry(carry, p_out[6], mid[5], p_out[6]);
-			carry = addcarry(carry, p_out[7], mid[6], p_out[7]);
-			carry = addcarry(carry, p_out[8], mid[7], p_out[8]);
-			carry = addcarry(carry, p_out[9], mid[8], p_out[9]);
-			p_out[10] += carry;
-
-			mid[0] = umul(p_1[2], p_2[0], mul_carry);
-			carry = addcarry(0    , umul(p_1[2], p_2[1], mul_carry2), mul_carry , mid[1]);
-			carry = addcarry(carry, umul(p_1[2], p_2[2], mul_carry ), mul_carry2, mid[2]);
-			carry = addcarry(carry, umul(p_1[2], p_2[3], mul_carry2), mul_carry , mid[3]);
-			carry = addcarry(carry, umul(p_1[2], p_2[4], mul_carry ), mul_carry2, mid[4]);
-			carry = addcarry(carry, umul(p_1[2], p_2[5], mul_carry2), mul_carry , mid[5]);
-			carry = addcarry(carry, umul(p_1[2], p_2[6], mul_carry ), mul_carry2, mid[6]);
-			carry = addcarry(carry, umul(p_1[2], p_2[7], mul_carry2), mul_carry , mid[7]);
-			carry = addcarry(carry, umul(p_1[2], p_2[8], p_out[11] ), mul_carry2, mid[8]);
-			p_out[11] += carry;
-
-			carry = addcarry(0    , p_out[ 2], mid[0], p_out[ 2]);
-			carry = addcarry(carry, p_out[ 3], mid[1], p_out[ 3]);
-			carry = addcarry(carry, p_out[ 4], mid[2], p_out[ 4]);
-			carry = addcarry(carry, p_out[ 5], mid[3], p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], mid[4], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mid[5], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mid[6], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[7], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[8], p_out[10]);
-			p_out[11] += carry;
-
-			mid[0] = umul(p_1[3], p_2[0], mul_carry);
-			carry = addcarry(0    , umul(p_1[3], p_2[1], mul_carry2), mul_carry , mid[1]);
-			carry = addcarry(carry, umul(p_1[3], p_2[2], mul_carry ), mul_carry2, mid[2]);
-			carry = addcarry(carry, umul(p_1[3], p_2[3], mul_carry2), mul_carry , mid[3]);
-			carry = addcarry(carry, umul(p_1[3], p_2[4], mul_carry ), mul_carry2, mid[4]);
-			carry = addcarry(carry, umul(p_1[3], p_2[5], mul_carry2), mul_carry , mid[5]);
-			carry = addcarry(carry, umul(p_1[3], p_2[6], mul_carry ), mul_carry2, mid[6]);
-			carry = addcarry(carry, umul(p_1[3], p_2[7], mul_carry2), mul_carry , mid[7]);
-			carry = addcarry(carry, umul(p_1[3], p_2[8], p_out[12] ), mul_carry2, mid[8]);
-			p_out[12] += carry;
-
-			carry = addcarry(0    , p_out[ 3], mid[0], p_out[ 3]);
-			carry = addcarry(carry, p_out[ 4], mid[1], p_out[ 4]);
-			carry = addcarry(carry, p_out[ 5], mid[2], p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], mid[3], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mid[4], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mid[5], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[6], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[7], p_out[10]);
-			carry = addcarry(carry, p_out[11], mid[8], p_out[11]);
-			p_out[12] += carry;
-
-			mid[0] = umul(p_1[4], p_2[0], mul_carry);
-			carry = addcarry(0    , umul(p_1[4], p_2[1], mul_carry2), mul_carry , mid[1]);
-			carry = addcarry(carry, umul(p_1[4], p_2[2], mul_carry ), mul_carry2, mid[2]);
-			carry = addcarry(carry, umul(p_1[4], p_2[3], mul_carry2), mul_carry , mid[3]);
-			carry = addcarry(carry, umul(p_1[4], p_2[4], mul_carry ), mul_carry2, mid[4]);
-			carry = addcarry(carry, umul(p_1[4], p_2[5], mul_carry2), mul_carry , mid[5]);
-			carry = addcarry(carry, umul(p_1[4], p_2[6], mul_carry ), mul_carry2, mid[6]);
-			carry = addcarry(carry, umul(p_1[4], p_2[7], mul_carry2), mul_carry , mid[7]);
-			carry = addcarry(carry, umul(p_1[4], p_2[8], p_out[13] ), mul_carry2, mid[8]);
-			p_out[13] += carry;
-
-			carry = addcarry(0    , p_out[ 4], mid[0], p_out[ 4]);
-			carry = addcarry(carry, p_out[ 5], mid[1], p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], mid[2], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mid[3], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mid[4], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[5], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[6], p_out[10]);
-			carry = addcarry(carry, p_out[11], mid[7], p_out[11]);
-			carry = addcarry(carry, p_out[12], mid[8], p_out[12]);
-			p_out[13] += carry;
-
-			mid[0] = umul(p_1[5], p_2[0], mul_carry);
-			carry = addcarry(0    , umul(p_1[5], p_2[1], mul_carry2), mul_carry , mid[1]);
-			carry = addcarry(carry, umul(p_1[5], p_2[2], mul_carry ), mul_carry2, mid[2]);
-			carry = addcarry(carry, umul(p_1[5], p_2[3], mul_carry2), mul_carry , mid[3]);
-			carry = addcarry(carry, umul(p_1[5], p_2[4], mul_carry ), mul_carry2, mid[4]);
-			carry = addcarry(carry, umul(p_1[5], p_2[5], mul_carry2), mul_carry , mid[5]);
-			carry = addcarry(carry, umul(p_1[5], p_2[6], mul_carry ), mul_carry2, mid[6]);
-			carry = addcarry(carry, umul(p_1[5], p_2[7], mul_carry2), mul_carry , mid[7]);
-			carry = addcarry(carry, umul(p_1[5], p_2[8], p_out[14] ), mul_carry2, mid[8]);
-			p_out[14] += carry;
-
-			carry = addcarry(0    , p_out[ 5], mid[0], p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], mid[1], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mid[2], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mid[3], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[4], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[5], p_out[10]);
-			carry = addcarry(carry, p_out[11], mid[6], p_out[11]);
-			carry = addcarry(carry, p_out[12], mid[7], p_out[12]);
-			carry = addcarry(carry, p_out[13], mid[8], p_out[13]);
-			p_out[14] += carry;
-
-			mid[0] = umul(p_1[6], p_2[0], mul_carry);
-			carry = addcarry(0    , umul(p_1[6], p_2[1], mul_carry2), mul_carry , mid[1]);
-			carry = addcarry(carry, umul(p_1[6], p_2[2], mul_carry ), mul_carry2, mid[2]);
-			carry = addcarry(carry, umul(p_1[6], p_2[3], mul_carry2), mul_carry , mid[3]);
-			carry = addcarry(carry, umul(p_1[6], p_2[4], mul_carry ), mul_carry2, mid[4]);
-			carry = addcarry(carry, umul(p_1[6], p_2[5], mul_carry2), mul_carry , mid[5]);
-			carry = addcarry(carry, umul(p_1[6], p_2[6], mul_carry ), mul_carry2, mid[6]);
-			carry = addcarry(carry, umul(p_1[6], p_2[7], mul_carry2), mul_carry , mid[7]);
-			carry = addcarry(carry, umul(p_1[6], p_2[8], p_out[15] ), mul_carry2, mid[8]);
-			p_out[15] += carry;
-
-			carry = addcarry(0    , p_out[ 6], mid[0], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mid[1], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mid[2], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[3], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[4], p_out[10]);
-			carry = addcarry(carry, p_out[11], mid[5], p_out[11]);
-			carry = addcarry(carry, p_out[12], mid[6], p_out[12]);
-			carry = addcarry(carry, p_out[13], mid[7], p_out[13]);
-			carry = addcarry(carry, p_out[14], mid[8], p_out[14]);
-			p_out[15] += carry;
-
-			mid[0] = umul(p_1[7], p_2[0], mul_carry);
-			carry = addcarry(0    , umul(p_1[7], p_2[1], mul_carry2), mul_carry , mid[1]);
-			carry = addcarry(carry, umul(p_1[7], p_2[2], mul_carry ), mul_carry2, mid[2]);
-			carry = addcarry(carry, umul(p_1[7], p_2[3], mul_carry2), mul_carry , mid[3]);
-			carry = addcarry(carry, umul(p_1[7], p_2[4], mul_carry ), mul_carry2, mid[4]);
-			carry = addcarry(carry, umul(p_1[7], p_2[5], mul_carry2), mul_carry , mid[5]);
-			carry = addcarry(carry, umul(p_1[7], p_2[6], mul_carry ), mul_carry2, mid[6]);
-			carry = addcarry(carry, umul(p_1[7], p_2[7], mul_carry2), mul_carry , mid[7]);
-			carry = addcarry(carry, umul(p_1[7], p_2[8], p_out[16] ), mul_carry2, mid[8]);
-			p_out[16] += carry;
-
-			carry = addcarry(0    , p_out[ 7], mid[0], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], mid[1], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[2], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[3], p_out[10]);
-			carry = addcarry(carry, p_out[11], mid[4], p_out[11]);
-			carry = addcarry(carry, p_out[12], mid[5], p_out[12]);
-			carry = addcarry(carry, p_out[13], mid[6], p_out[13]);
-			carry = addcarry(carry, p_out[14], mid[7], p_out[14]);
-			carry = addcarry(carry, p_out[15], mid[8], p_out[15]);
-			p_out[16] += carry;
-
-			mid[0] = umul(p_1[8], p_2[0], mul_carry);
-			carry = addcarry(0    , umul(p_1[8], p_2[1], mul_carry2), mul_carry , mid[1]);
-			carry = addcarry(carry, umul(p_1[8], p_2[2], mul_carry ), mul_carry2, mid[2]);
-			carry = addcarry(carry, umul(p_1[8], p_2[3], mul_carry2), mul_carry , mid[3]);
-			carry = addcarry(carry, umul(p_1[8], p_2[4], mul_carry ), mul_carry2, mid[4]);
-			carry = addcarry(carry, umul(p_1[8], p_2[5], mul_carry2), mul_carry , mid[5]);
-			carry = addcarry(carry, umul(p_1[8], p_2[6], mul_carry ), mul_carry2, mid[6]);
-			carry = addcarry(carry, umul(p_1[8], p_2[7], mul_carry2), mul_carry , mid[7]);
-			        addcarry(carry, p_1[8] * p_2[8]    , mul_carry2, mid[8]);
-
-			carry = addcarry(0    , p_out[ 8], mid[0], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mid[1], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], mid[2], p_out[10]);
-			carry = addcarry(carry, p_out[11], mid[3], p_out[11]);
-			carry = addcarry(carry, p_out[12], mid[4], p_out[12]);
-			carry = addcarry(carry, p_out[13], mid[5], p_out[13]);
-			carry = addcarry(carry, p_out[14], mid[6], p_out[14]);
-			carry = addcarry(carry, p_out[15], mid[7], p_out[15]);
-			        addcarry(carry, p_out[16], mid[8], p_out[16]);
-		}
-#endif
 
 		static void mpi_square(std::array<uint64_t, 17>& p_out, const block_t& p_in)
 		{
-			std::array<uint64_t, 6> carries;
-			uint64_t mul_carry;
-			uint8_t carry;
+			std::array<core::widening_mul_result<uint64_t>, 8> mul_res;
+			core::carrying_add_result<uint64_t> add_res;
 
-			p_out[1] = umul(p_in[0], p_in[1], p_out[2]);
-			carry = addcarry(0    , p_out[2], umul(p_in[0], p_in[2], p_out[3]), p_out[2]);
-			carry = addcarry(carry, p_out[3], umul(p_in[0], p_in[3], p_out[4]), p_out[3]);
-			carry = addcarry(carry, p_out[4], umul(p_in[0], p_in[4], p_out[5]), p_out[4]);
-			carry = addcarry(carry, p_out[5], umul(p_in[0], p_in[5], p_out[6]), p_out[5]);
-			carry = addcarry(carry, p_out[6], umul(p_in[0], p_in[6], p_out[7]), p_out[6]);
-			carry = addcarry(carry, p_out[7], umul(p_in[0], p_in[7], p_out[8]), p_out[7]);
-			carry = addcarry(carry, p_out[8], umul(p_in[0], p_in[8], p_out[9]), p_out[8]);
-			p_out[9] += carry;
+			mul_res[0] = core::widening_mul<uint64_t>(p_in[0], p_in[1]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_in[0], p_in[2]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_in[0], p_in[3]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_in[0], p_in[4]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_in[0], p_in[5]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_in[0], p_in[6]);
+			mul_res[6] = core::widening_mul<uint64_t>(p_in[0], p_in[7]);
+			mul_res[7] = core::widening_mul<uint64_t>(p_in[0], p_in[8]);
+
+			p_out[1] = mul_res[0].low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[0].high_bits, mul_res[1].low_bits, false           ); p_out[2] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[1].high_bits, mul_res[2].low_bits, add_res.overflow); p_out[3] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[2].high_bits, mul_res[3].low_bits, add_res.overflow); p_out[4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[3].high_bits, mul_res[4].low_bits, add_res.overflow); p_out[5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[4].high_bits, mul_res[5].low_bits, add_res.overflow); p_out[6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[5].high_bits, mul_res[6].low_bits, add_res.overflow); p_out[7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(mul_res[6].high_bits, mul_res[7].low_bits, add_res.overflow); p_out[8] = add_res.low_bits;
+			p_out[9] = mul_res[7].high_bits + add_res.overflow;
+
+			mul_res[0] = core::widening_mul<uint64_t>(p_in[1], p_in[2]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_in[1], p_in[3]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_in[1], p_in[4]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_in[1], p_in[5]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_in[1], p_in[6]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_in[1], p_in[7]);
+			mul_res[6] = core::widening_mul<uint64_t>(p_in[1], p_in[8]);
+
+			add_res = core::carrying_add<uint64_t>(p_out[3], mul_res[0].low_bits, false           ); p_out[3] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[4], mul_res[1].low_bits, add_res.overflow); p_out[4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[5], mul_res[2].low_bits, add_res.overflow); p_out[5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[6], mul_res[3].low_bits, add_res.overflow); p_out[6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[7], mul_res[4].low_bits, add_res.overflow); p_out[7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[8], mul_res[5].low_bits, add_res.overflow); p_out[8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[9], mul_res[6].low_bits, add_res.overflow); p_out[9] = add_res.low_bits;
+			p_out[10] = mul_res[6].high_bits + add_res.overflow;
+
+			add_res = core::carrying_add<uint64_t>(p_out[4], mul_res[0].high_bits, false           ); p_out[4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[5], mul_res[1].high_bits, add_res.overflow); p_out[5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[6], mul_res[2].high_bits, add_res.overflow); p_out[6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[7], mul_res[3].high_bits, add_res.overflow); p_out[7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[8], mul_res[4].high_bits, add_res.overflow); p_out[8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[9], mul_res[5].high_bits, add_res.overflow); p_out[9] = add_res.low_bits;
+			p_out[10] += add_res.overflow;
+
+			mul_res[0] = core::widening_mul<uint64_t>(p_in[2], p_in[3]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_in[2], p_in[4]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_in[2], p_in[5]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_in[2], p_in[6]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_in[2], p_in[7]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_in[2], p_in[8]);
+
+			add_res = core::carrying_add<uint64_t>(p_out[ 5], mul_res[0].low_bits, false           ); p_out[ 5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], mul_res[1].low_bits, add_res.overflow); p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[2].low_bits, add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[3].low_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[4].low_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[5].low_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			p_out[11] = mul_res[5].high_bits + add_res.overflow;
+
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], mul_res[0].high_bits, false           ); p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[1].high_bits, add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[2].high_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[3].high_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[4].high_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			p_out[11] += add_res.overflow;
+
+			mul_res[0] = core::widening_mul<uint64_t>(p_in[3], p_in[4]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_in[3], p_in[5]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_in[3], p_in[6]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_in[3], p_in[7]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_in[3], p_in[8]);
+
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[0].low_bits, false           ); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[1].low_bits, add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[2].low_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[3].low_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[4].low_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			p_out[12] = mul_res[4].high_bits + add_res.overflow;
+
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[0].high_bits, false           ); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[1].high_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[2].high_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[3].high_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			p_out[12] += add_res.overflow;
+
+			mul_res[0] = core::widening_mul<uint64_t>(p_in[4], p_in[5]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_in[4], p_in[6]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_in[4], p_in[7]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_in[4], p_in[8]);
+
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[0].low_bits, false           ); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[1].low_bits, add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[2].low_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[3].low_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			p_out[13] = mul_res[3].high_bits + add_res.overflow;
+
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[0].high_bits, false           ); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[1].high_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[2].high_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			p_out[13] += add_res.overflow;
+
+			mul_res[0] = core::widening_mul<uint64_t>(p_in[5], p_in[6]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_in[5], p_in[7]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_in[5], p_in[8]);
+
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[0].low_bits, false           ); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[1].low_bits, add_res.overflow); p_out[12] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[13], mul_res[2].low_bits, add_res.overflow); p_out[13] = add_res.low_bits;
+			p_out[14] = mul_res[2].high_bits + add_res.overflow;
+
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[0].high_bits, false           ); p_out[12] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[13], mul_res[1].high_bits, add_res.overflow); p_out[13] = add_res.low_bits;
+			p_out[14] += add_res.overflow;
+
+			mul_res[0] = core::widening_mul<uint64_t>(p_in[6], p_in[7]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_in[6], p_in[8]);
+
+			add_res = core::carrying_add<uint64_t>(p_out[13], mul_res[0].low_bits, false           ); p_out[13] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[14], mul_res[1].low_bits, add_res.overflow); p_out[14] = add_res.low_bits;
+			p_out[15] = mul_res[1].high_bits + add_res.overflow;
+
+			add_res = core::carrying_add<uint64_t>(p_out[14], mul_res[0].high_bits, false           ); p_out[14] = add_res.low_bits;
+			p_out[15] += add_res.overflow;
 
 
-			carry = addcarry(0    , p_out[3], umul(p_in[1], p_in[2], carries[0]), p_out[3]);
-			carry = addcarry(carry, p_out[4], umul(p_in[1], p_in[3], carries[1]), p_out[4]);
-			carry = addcarry(carry, p_out[5], umul(p_in[1], p_in[4], carries[2]), p_out[5]);
-			carry = addcarry(carry, p_out[6], umul(p_in[1], p_in[5], carries[3]), p_out[6]);
-			carry = addcarry(carry, p_out[7], umul(p_in[1], p_in[6], carries[4]), p_out[7]);
-			carry = addcarry(carry, p_out[8], umul(p_in[1], p_in[7], carries[5]), p_out[8]);
-			carry = addcarry(carry, p_out[9], umul(p_in[1], p_in[8], p_out[10] ), p_out[9]);
-			p_out[10] += carry;
-
-			carry = addcarry(0    , p_out[4], carries[0], p_out[4]);
-			carry = addcarry(carry, p_out[5], carries[1], p_out[5]);
-			carry = addcarry(carry, p_out[6], carries[2], p_out[6]);
-			carry = addcarry(carry, p_out[7], carries[3], p_out[7]);
-			carry = addcarry(carry, p_out[8], carries[4], p_out[8]);
-			carry = addcarry(carry, p_out[9], carries[5], p_out[9]);
-			p_out[10] += carry;
-
-
-			carry = addcarry(0    , p_out[ 5], umul(p_in[2], p_in[3], carries[0]), p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], umul(p_in[2], p_in[4], carries[1]), p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], umul(p_in[2], p_in[5], carries[2]), p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], umul(p_in[2], p_in[6], carries[3]), p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], umul(p_in[2], p_in[7], carries[4]), p_out[ 9]);
-			carry = addcarry(carry, p_out[10], umul(p_in[2], p_in[8], p_out[11] ), p_out[10]);
-			p_out[11] += carry;
-
-			carry = addcarry(0    , p_out[ 6], carries[0], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], carries[1], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], carries[2], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], carries[3], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], carries[4], p_out[10]);
-			p_out[11] += carry;
-
-
-			carry = addcarry(0    , p_out[ 7], umul(p_in[3], p_in[4], carries[0]), p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], umul(p_in[3], p_in[5], carries[1]), p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], umul(p_in[3], p_in[6], carries[2]), p_out[ 9]);
-			carry = addcarry(carry, p_out[10], umul(p_in[3], p_in[7], carries[3]), p_out[10]);
-			carry = addcarry(carry, p_out[11], umul(p_in[3], p_in[8], p_out[12] ), p_out[11]);
-			p_out[12] += carry;
-
-			carry = addcarry(0    , p_out[ 8], carries[0], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], carries[1], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], carries[2], p_out[10]);
-			carry = addcarry(carry, p_out[11], carries[3], p_out[11]);
-			p_out[12] += carry;
-
-
-			carry = addcarry(0    , p_out[ 9], umul(p_in[4], p_in[5], carries[0]), p_out[ 9]);
-			carry = addcarry(carry, p_out[10], umul(p_in[4], p_in[6], carries[1]), p_out[10]);
-			carry = addcarry(carry, p_out[11], umul(p_in[4], p_in[7], carries[2]), p_out[11]);
-			carry = addcarry(carry, p_out[12], umul(p_in[4], p_in[8], p_out[13] ), p_out[12]);
-			p_out[13] += carry;
-
-			carry = addcarry(0    , p_out[10], carries[0], p_out[10]);
-			carry = addcarry(carry, p_out[11], carries[1], p_out[11]);
-			carry = addcarry(carry, p_out[12], carries[2], p_out[12]);
-			p_out[13] += carry;
-
-
-			carry = addcarry(0    , p_out[11], umul(p_in[5], p_in[6], carries[0]), p_out[11]);
-			carry = addcarry(carry, p_out[12], umul(p_in[5], p_in[7], carries[1]), p_out[12]);
-			carry = addcarry(carry, p_out[13], umul(p_in[5], p_in[8], p_out[14] ), p_out[13]);
-			p_out[14] += carry;
-
-			carry = addcarry(0    , p_out[12], carries[0], p_out[12]);
-			carry = addcarry(carry, p_out[13], carries[1], p_out[13]);
-			p_out[14] += carry;
-
-
-			carry = addcarry(0    , p_out[13], umul(p_in[6], p_in[7], carries[0]), p_out[13]);
-			carry = addcarry(carry, p_out[14], umul(p_in[6], p_in[8], p_out[15] ), p_out[14]);
-			p_out[15] += carry;
-
-			carry = addcarry(0, p_out[14], carries[0], p_out[14]);
-			p_out[15] += carry;
-
-
-			carry = addcarry(0, p_out[15], umul(p_in[7], p_in[8], p_out[16]), p_out[15]);
-			p_out[16] += carry;
-
+			mul_res[0] = core::widening_mul<uint64_t>(p_in[7], p_in[8]);
+			add_res = core::carrying_add<uint64_t>(p_out[15], mul_res[0].low_bits, false           ); p_out[15] = add_res.low_bits;
+			p_out[16] = mul_res[0].high_bits + add_res.overflow;
 
 			//== Doubling ==
-			carry = addcarry(0    , p_out[ 1], p_out[ 1], p_out[ 1]);
-			carry = addcarry(carry, p_out[ 2], p_out[ 2], p_out[ 2]);
-			carry = addcarry(carry, p_out[ 3], p_out[ 3], p_out[ 3]);
-			carry = addcarry(carry, p_out[ 4], p_out[ 4], p_out[ 4]);
-			carry = addcarry(carry, p_out[ 5], p_out[ 5], p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], p_out[ 6], p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], p_out[ 7], p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], p_out[ 8], p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], p_out[ 9], p_out[ 9]);
-			carry = addcarry(carry, p_out[10], p_out[10], p_out[10]);
-			carry = addcarry(carry, p_out[11], p_out[11], p_out[11]);
-			carry = addcarry(carry, p_out[12], p_out[12], p_out[12]);
-			carry = addcarry(carry, p_out[13], p_out[13], p_out[13]);
-			carry = addcarry(carry, p_out[14], p_out[14], p_out[14]);
-			carry = addcarry(carry, p_out[15], p_out[15], p_out[15]);
-			        addcarry(carry, p_out[16], p_out[16], p_out[16]);
+
+			add_res = core::carrying_add<uint64_t>(p_out[ 1], p_out[ 1], false           ); p_out[ 1] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 2], p_out[ 2], add_res.overflow); p_out[ 2] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 3], p_out[ 3], add_res.overflow); p_out[ 3] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 4], p_out[ 4], add_res.overflow); p_out[ 4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 5], p_out[ 5], add_res.overflow); p_out[ 5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], p_out[ 6], add_res.overflow); p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], p_out[ 7], add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], p_out[ 8], add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], p_out[ 9], add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], p_out[10], add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], p_out[11], add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], p_out[12], add_res.overflow); p_out[12] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[13], p_out[13], add_res.overflow); p_out[13] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[14], p_out[14], add_res.overflow); p_out[14] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[15], p_out[15], add_res.overflow); p_out[15] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[16], p_out[16], add_res.overflow); p_out[16] = add_res.low_bits;
 
 			//-- singles
-			p_out[0] = umul(p_in[0], p_in[0], mul_carry);
-			carry = addcarry(0    , p_out[ 1], mul_carry, p_out[ 1]);
-			carry = addcarry(carry, p_out[ 2], umul(p_in[1], p_in[1], mul_carry), p_out[ 2]);
-			carry = addcarry(carry, p_out[ 3], mul_carry, p_out[ 3]);
-			carry = addcarry(carry, p_out[ 4], umul(p_in[2], p_in[2], mul_carry), p_out[ 4]);
-			carry = addcarry(carry, p_out[ 5], mul_carry, p_out[ 5]);
-			carry = addcarry(carry, p_out[ 6], umul(p_in[3], p_in[3], mul_carry), p_out[ 6]);
-			carry = addcarry(carry, p_out[ 7], mul_carry, p_out[ 7]);
-			carry = addcarry(carry, p_out[ 8], umul(p_in[4], p_in[4], mul_carry), p_out[ 8]);
-			carry = addcarry(carry, p_out[ 9], mul_carry, p_out[ 9]);
-			carry = addcarry(carry, p_out[10], umul(p_in[5], p_in[5], mul_carry), p_out[10]);
-			carry = addcarry(carry, p_out[11], mul_carry, p_out[11]);
-			carry = addcarry(carry, p_out[12], umul(p_in[6], p_in[6], mul_carry), p_out[12]);
-			carry = addcarry(carry, p_out[13], mul_carry, p_out[13]);
-			carry = addcarry(carry, p_out[14], umul(p_in[7], p_in[7], mul_carry), p_out[14]);
-			carry = addcarry(carry, p_out[15], mul_carry, p_out[15]);
-			        addcarry(carry, p_out[16], p_in[8] * p_in[8]                , p_out[16]);
+			mul_res[0] = core::widening_mul<uint64_t>(p_in[0], p_in[0]);
+			mul_res[1] = core::widening_mul<uint64_t>(p_in[1], p_in[1]);
+			mul_res[2] = core::widening_mul<uint64_t>(p_in[2], p_in[2]);
+			mul_res[3] = core::widening_mul<uint64_t>(p_in[3], p_in[3]);
+			mul_res[4] = core::widening_mul<uint64_t>(p_in[4], p_in[4]);
+			mul_res[5] = core::widening_mul<uint64_t>(p_in[5], p_in[5]);
+			mul_res[6] = core::widening_mul<uint64_t>(p_in[6], p_in[6]);
+			mul_res[7] = core::widening_mul<uint64_t>(p_in[7], p_in[7]);
+
+			p_out[0] = mul_res[0].low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 1], mul_res[0].high_bits, false           ); p_out[ 1] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 2], mul_res[1].low_bits , add_res.overflow); p_out[ 2] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 3], mul_res[1].high_bits, add_res.overflow); p_out[ 3] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 4], mul_res[2].low_bits , add_res.overflow); p_out[ 4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 5], mul_res[2].high_bits, add_res.overflow); p_out[ 5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 6], mul_res[3].low_bits , add_res.overflow); p_out[ 6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 7], mul_res[3].high_bits, add_res.overflow); p_out[ 7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 8], mul_res[4].low_bits , add_res.overflow); p_out[ 8] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[ 9], mul_res[4].high_bits, add_res.overflow); p_out[ 9] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[10], mul_res[5].low_bits , add_res.overflow); p_out[10] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[11], mul_res[5].high_bits, add_res.overflow); p_out[11] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[12], mul_res[6].low_bits , add_res.overflow); p_out[12] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[13], mul_res[6].high_bits, add_res.overflow); p_out[13] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[14], mul_res[7].low_bits , add_res.overflow); p_out[14] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[15], mul_res[7].high_bits, add_res.overflow); p_out[15] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_out[16], p_in[8] * p_in[8]   , add_res.overflow); p_out[16] = add_res.low_bits;
 		}
 
 		static void mod_increment(block_t& p_out)
@@ -768,16 +604,15 @@ namespace crypto
 			}
 			else
 			{
-				uint8_t carry;
-				carry = addcarry(1    , p_out[0], 0, p_out[0]);
-				carry = addcarry(carry, p_out[1], 0, p_out[1]);
-				carry = addcarry(carry, p_out[2], 0, p_out[2]);
-				carry = addcarry(carry, p_out[3], 0, p_out[3]);
-				carry = addcarry(carry, p_out[4], 0, p_out[4]);
-				carry = addcarry(carry, p_out[5], 0, p_out[5]);
-				carry = addcarry(carry, p_out[6], 0, p_out[6]);
-				carry = addcarry(carry, p_out[7], 0, p_out[7]);
-				p_out[8] += carry;
+				core::carrying_add_result<uint64_t> add_res;
+				add_res = core::carrying_add<uint64_t>(p_out[0], 0, true            ); p_out[0] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_out[1], 0, add_res.overflow); p_out[1] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_out[2], 0, add_res.overflow); p_out[2] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_out[3], 0, add_res.overflow); p_out[3] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_out[4], 0, add_res.overflow); p_out[4] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_out[5], 0, add_res.overflow); p_out[5] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_out[6], 0, add_res.overflow); p_out[6] = add_res.low_bits;
+				p_out[8] += add_res.overflow;
 			}
 		}
 
@@ -808,16 +643,16 @@ namespace crypto
 			}
 			else
 			{
-				uint8_t borrow;
-				borrow = subborrow(1     , p_out[0], 0, p_out[0]);
-				borrow = subborrow(borrow, p_out[1], 0, p_out[1]);
-				borrow = subborrow(borrow, p_out[2], 0, p_out[2]);
-				borrow = subborrow(borrow, p_out[3], 0, p_out[3]);
-				borrow = subborrow(borrow, p_out[4], 0, p_out[4]);
-				borrow = subborrow(borrow, p_out[5], 0, p_out[5]);
-				borrow = subborrow(borrow, p_out[6], 0, p_out[6]);
-				borrow = subborrow(borrow, p_out[7], 0, p_out[7]);
-				p_out[8] -= borrow;
+				core::borrowing_sub_result<uint64_t> sub_res;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[0], 0, true            ); p_out[0] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[1], 0, sub_res.overflow); p_out[1] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[2], 0, sub_res.overflow); p_out[2] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[3], 0, sub_res.overflow); p_out[3] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[4], 0, sub_res.overflow); p_out[4] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[5], 0, sub_res.overflow); p_out[5] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[6], 0, sub_res.overflow); p_out[6] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[7], 0, sub_res.overflow); p_out[7] = sub_res.low_bits;
+				p_out[8] -= sub_res.overflow;
 			}
 		}
 
@@ -825,31 +660,31 @@ namespace crypto
 		{
 			//add
 			{
-				uint8_t carry;
-				carry = addcarry(0    , p_1[0], p_2[0], p_out[0]);
-				carry = addcarry(carry, p_1[1], p_2[1], p_out[1]);
-				carry = addcarry(carry, p_1[2], p_2[2], p_out[2]);
-				carry = addcarry(carry, p_1[3], p_2[3], p_out[3]);
-				carry = addcarry(carry, p_1[4], p_2[4], p_out[4]);
-				carry = addcarry(carry, p_1[5], p_2[5], p_out[5]);
-				carry = addcarry(carry, p_1[6], p_2[6], p_out[6]);
-				carry = addcarry(carry, p_1[7], p_2[7], p_out[7]);
-						addcarry(carry, p_1[8], p_2[8], p_out[8]);
+				core::carrying_add_result<uint64_t> add_res;
+				add_res = core::carrying_add<uint64_t>(p_1[0], p_2[0], false            ); p_out[0] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_1[1], p_2[1], add_res.overflow ); p_out[1] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_1[2], p_2[2], add_res.overflow ); p_out[2] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_1[3], p_2[3], add_res.overflow ); p_out[3] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_1[4], p_2[4], add_res.overflow ); p_out[4] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_1[5], p_2[5], add_res.overflow ); p_out[5] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_1[6], p_2[6], add_res.overflow ); p_out[6] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_1[7], p_2[7], add_res.overflow ); p_out[7] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_1[8], p_2[8], add_res.overflow ); p_out[8] = add_res.low_bits;
 			}
 
 			//mod
-			if(p_out[8] & 0x200_ui64)
+			if(p_out[8] > 0x1FF_ui64)
 			{
-				uint8_t borrow;
-				borrow = subborrow(0     , p_out[0], prime_base  , p_out[0]);
-				borrow = subborrow(borrow, p_out[1], prime_base  , p_out[1]);
-				borrow = subborrow(borrow, p_out[2], prime_base  , p_out[2]);
-				borrow = subborrow(borrow, p_out[3], prime_base  , p_out[3]);
-				borrow = subborrow(borrow, p_out[4], prime_base  , p_out[4]);
-				borrow = subborrow(borrow, p_out[5], prime_base  , p_out[5]);
-				borrow = subborrow(borrow, p_out[6], prime_base  , p_out[6]);
-				borrow = subborrow(borrow, p_out[7], prime_base  , p_out[7]);
-				         subborrow(borrow, p_out[8], prime_base_l, p_out[8]);
+				core::borrowing_sub_result<uint64_t> sub_res;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[0], prime_base  , false           ); p_out[0] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[1], prime_base  , sub_res.overflow); p_out[1] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[2], prime_base  , sub_res.overflow); p_out[2] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[3], prime_base  , sub_res.overflow); p_out[3] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[4], prime_base  , sub_res.overflow); p_out[4] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[5], prime_base  , sub_res.overflow); p_out[5] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[6], prime_base  , sub_res.overflow); p_out[6] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[7], prime_base  , sub_res.overflow); p_out[7] = sub_res.low_bits;
+				sub_res = core::borrowing_sub<uint64_t>(p_out[8], prime_base_l, sub_res.overflow); p_out[8] = sub_res.low_bits;
 			}
 			else if(
 				p_out[0] == prime_base &&
@@ -881,16 +716,17 @@ namespace crypto
 			{
 				return;
 			}
-			uint8_t borrow;
-			borrow = subborrow(0     , prime_base  , p_val[0], p_val[0]);
-			borrow = subborrow(borrow, prime_base  , p_val[1], p_val[1]);
-			borrow = subborrow(borrow, prime_base  , p_val[2], p_val[2]);
-			borrow = subborrow(borrow, prime_base  , p_val[3], p_val[3]);
-			borrow = subborrow(borrow, prime_base  , p_val[4], p_val[4]);
-			borrow = subborrow(borrow, prime_base  , p_val[5], p_val[5]);
-			borrow = subborrow(borrow, prime_base  , p_val[6], p_val[6]);
-			borrow = subborrow(borrow, prime_base  , p_val[7], p_val[7]);
-			         subborrow(borrow, prime_base_l, p_val[8], p_val[8]);
+
+			core::borrowing_sub_result<uint64_t> sub_res;
+			sub_res = core::borrowing_sub<uint64_t>(prime_base  , p_val[0], false           ); p_val[0] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(prime_base  , p_val[1], sub_res.overflow); p_val[1] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(prime_base  , p_val[2], sub_res.overflow); p_val[2] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(prime_base  , p_val[3], sub_res.overflow); p_val[3] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(prime_base  , p_val[4], sub_res.overflow); p_val[4] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(prime_base  , p_val[5], sub_res.overflow); p_val[5] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(prime_base  , p_val[6], sub_res.overflow); p_val[6] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(prime_base  , p_val[7], sub_res.overflow); p_val[7] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(prime_base_l, p_val[8], sub_res.overflow); p_val[8] = sub_res.low_bits;
 		}
 
 		static void mod_double(block_t& p_val)
@@ -913,35 +749,38 @@ namespace crypto
 				p_val[16]
 			)
 			{
-				uint8_t carry;
-				carry = addcarry(0    , p_val[0], (p_val[ 8] >> 9) | (p_val[ 9] << 55), p_val[0]);
-				carry = addcarry(carry, p_val[1], (p_val[ 9] >> 9) | (p_val[10] << 55), p_val[1]);
-				carry = addcarry(carry, p_val[2], (p_val[10] >> 9) | (p_val[11] << 55), p_val[2]);
-				carry = addcarry(carry, p_val[3], (p_val[11] >> 9) | (p_val[12] << 55), p_val[3]);
-				carry = addcarry(carry, p_val[4], (p_val[12] >> 9) | (p_val[13] << 55), p_val[4]);
-				carry = addcarry(carry, p_val[5], (p_val[13] >> 9) | (p_val[14] << 55), p_val[5]);
-				carry = addcarry(carry, p_val[6], (p_val[14] >> 9) | (p_val[15] << 55), p_val[6]);
-				carry = addcarry(carry, p_val[7], (p_val[15] >> 9) | (p_val[16] << 55), p_val[7]);
-				        addcarry(carry, p_val[8] & 0x1FF, (p_val[16] >> 9)            , p_val[8]);
+				core::carrying_add_result<uint64_t> add_res;
+				add_res = core::carrying_add<uint64_t>(p_val[0], (p_val[ 8] >> 9) | (p_val[ 9] << 55), false           ); p_val[0] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_val[1], (p_val[ 9] >> 9) | (p_val[10] << 55), add_res.overflow); p_val[1] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_val[2], (p_val[10] >> 9) | (p_val[11] << 55), add_res.overflow); p_val[2] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_val[3], (p_val[11] >> 9) | (p_val[12] << 55), add_res.overflow); p_val[3] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_val[4], (p_val[12] >> 9) | (p_val[13] << 55), add_res.overflow); p_val[4] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_val[5], (p_val[13] >> 9) | (p_val[14] << 55), add_res.overflow); p_val[5] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_val[6], (p_val[14] >> 9) | (p_val[15] << 55), add_res.overflow); p_val[6] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_val[7], (p_val[15] >> 9) | (p_val[16] << 55), add_res.overflow); p_val[7] = add_res.low_bits;
+				add_res = core::carrying_add<uint64_t>(p_val[8] & 0x1FF, (p_val[16] >> 9)            , add_res.overflow); p_val[8] = add_res.low_bits;
 
-				if(p_val[8] & 0x200)
+
+				if(p_val[8] > 0x1FF)
 				{
-					carry = addcarry(1    , p_val[0]        , 0, p_val[0]);
-					carry = addcarry(carry, p_val[1]        , 0, p_val[1]);
-					carry = addcarry(carry, p_val[2]        , 0, p_val[2]);
-					carry = addcarry(carry, p_val[3]        , 0, p_val[3]);
-					carry = addcarry(carry, p_val[4]        , 0, p_val[4]);
-					carry = addcarry(carry, p_val[5]        , 0, p_val[5]);
-					carry = addcarry(carry, p_val[6]        , 0, p_val[6]);
-					carry = addcarry(carry, p_val[7]        , 0, p_val[7]);
-					        addcarry(carry, p_val[8] & 0x1FF, 0, p_val[8]);
-					if(p_val[8] & 0x200)
+					add_res = core::carrying_add<uint64_t>(p_val[0], 0, true            ); p_val[0] = add_res.low_bits;
+					add_res = core::carrying_add<uint64_t>(p_val[1], 0, add_res.overflow); p_val[1] = add_res.low_bits;
+					add_res = core::carrying_add<uint64_t>(p_val[2], 0, add_res.overflow); p_val[2] = add_res.low_bits;
+					add_res = core::carrying_add<uint64_t>(p_val[3], 0, add_res.overflow); p_val[3] = add_res.low_bits;
+					add_res = core::carrying_add<uint64_t>(p_val[4], 0, add_res.overflow); p_val[4] = add_res.low_bits;
+					add_res = core::carrying_add<uint64_t>(p_val[5], 0, add_res.overflow); p_val[5] = add_res.low_bits;
+					add_res = core::carrying_add<uint64_t>(p_val[6], 0, add_res.overflow); p_val[6] = add_res.low_bits;
+					add_res = core::carrying_add<uint64_t>(p_val[7], 0, add_res.overflow); p_val[7] = add_res.low_bits;
+					add_res = core::carrying_add<uint64_t>(p_val[8] & 0x1FF, 0, add_res.overflow); p_val[8] = add_res.low_bits;
+
+					if(p_val[8] > 0x1FF)
 					{
 						p_val[0] = 1;
 						p_val[8] = 0;
 					}
 					return;
 				}
+
 			}
 
 			if
@@ -1116,16 +955,16 @@ namespace crypto
 
 		static inline void order_simple_reduce(const std::span<uint64_t, 9> p_val)
 		{
-			uint8_t borrow;
-			borrow = subborrow(0     , p_val[0], order[0], p_val[0]);
-			borrow = subborrow(borrow, p_val[1], order[1], p_val[1]);
-			borrow = subborrow(borrow, p_val[2], order[2], p_val[2]);
-			borrow = subborrow(borrow, p_val[3], order[3], p_val[3]);
-			borrow = subborrow(borrow, p_val[4], order[4], p_val[4]);
-			borrow = subborrow(borrow, p_val[5], order[5], p_val[5]);
-			borrow = subborrow(borrow, p_val[6], order[6], p_val[6]);
-			borrow = subborrow(borrow, p_val[7], order[7], p_val[7]);
-			         subborrow(borrow, p_val[8], order[8], p_val[8]);
+			core::borrowing_sub_result<uint64_t> sub_res;
+			sub_res = core::borrowing_sub<uint64_t>(p_val[0], order[0], false           ); p_val[0] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(p_val[1], order[1], sub_res.overflow); p_val[1] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(p_val[2], order[2], sub_res.overflow); p_val[2] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(p_val[3], order[3], sub_res.overflow); p_val[3] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(p_val[4], order[4], sub_res.overflow); p_val[4] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(p_val[5], order[5], sub_res.overflow); p_val[5] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(p_val[6], order[6], sub_res.overflow); p_val[6] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(p_val[7], order[7], sub_res.overflow); p_val[7] = sub_res.low_bits;
+			sub_res = core::borrowing_sub<uint64_t>(p_val[8], order[8], sub_res.overflow); p_val[8] = sub_res.low_bits;
 		}
 
 		static void order_reduce(block_t& p_val)
@@ -1134,24 +973,28 @@ namespace crypto
 			{
 				const uint64_t div = p_val[8] / (order[8] + 1);
 
-				uint64_t mul_carry;
-				uint8_t borrow;
-				uint8_t borrow2 = 0;
-				uint64_t tmp;
+				core::widening_mul_result<uint64_t> mul_res;
+				core::borrowing_sub_result<uint64_t> sub_res0;
+				core::borrowing_sub_result<uint64_t> sub_res1;
 
-				borrow = subborrow(0, p_val[0], umul(order[0], div, mul_carry), p_val[0]);
+				mul_res  = core::widening_mul<uint64_t>(order[0], div);
+				sub_res0 = core::borrowing_sub<uint64_t>(p_val[0], mul_res.low_bits, false); p_val[0] = sub_res0.low_bits;
 
+				sub_res1.overflow = 0;
 				for(uint8_t i = 1; i < 9; ++i)
 				{
-					borrow  = subborrow(borrow , p_val[i], mul_carry                     , tmp);
-					borrow2 = subborrow(borrow2, tmp     , umul(order[i], div, mul_carry), p_val[i]);
+					sub_res0 = core::borrowing_sub<uint64_t>(p_val[i], mul_res.high_bits, sub_res0.overflow);
+					mul_res  = core::widening_mul<uint64_t>(order[i], div);
+					sub_res1 = core::borrowing_sub<uint64_t>(sub_res0.low_bits, mul_res.low_bits, sub_res1.overflow);
+					p_val[i] = sub_res1.low_bits;
 				}
 
-				if(p_val[8] & 0x80)
+				if(p_val[8] > 0x7F)
 				{
 					order_simple_reduce(p_val);
 				}
 			}
+
 			if(order_should_reduce(p_val))
 			{
 				order_simple_reduce(p_val);
@@ -1164,20 +1007,23 @@ namespace crypto
 
 			if(div > 1)
 			{
-				uint64_t mul_carry;
-				uint8_t borrow;
-				uint8_t borrow2 = 0;
-				uint64_t tmp;
+				core::widening_mul_result<uint64_t> mul_res;
+				core::borrowing_sub_result<uint64_t> sub_res0;
+				core::borrowing_sub_result<uint64_t> sub_res1;
 
-				borrow = subborrow(0, p_val[0], umul(order[0], div, mul_carry), p_val[0]);
+				mul_res  = core::widening_mul<uint64_t>(order[0], div);
+				sub_res0 = core::borrowing_sub<uint64_t>(p_val[0], mul_res.low_bits, false); p_val[0] = sub_res0.low_bits;
 
+				sub_res1.overflow = 0;
 				for(uint8_t i = 1; i < 9; ++i)
 				{
-					borrow  = subborrow(borrow , p_val[i], mul_carry                     , tmp);
-					borrow2 = subborrow(borrow2, tmp     , umul(order[i], div, mul_carry), p_val[i]);
+					sub_res0 = core::borrowing_sub<uint64_t>(p_val[i], mul_res.high_bits, sub_res0.overflow);
+					mul_res  = core::widening_mul<uint64_t>(order[i], div);
+					sub_res1 = core::borrowing_sub<uint64_t>(sub_res0.low_bits, mul_res.low_bits, sub_res1.overflow);
+					p_val[i] = sub_res1.low_bits;
 				}
 
-				if(p_val[8] & 0x80)
+				if(p_val[8] > 0x7F)
 				{
 					order_simple_reduce(p_val);
 				}
@@ -1192,22 +1038,24 @@ namespace crypto
 		{
 			if(p_val[9])
 			{
-				uint64_t mul_carry;
-				uint8_t borrow;
-				uint8_t borrow2 = 0;
-				uint64_t tmp;
+				const uint64_t div = core::narrowing_div<uint64_t>(p_val[9], p_val[8], order[8] + 1).quotient;
 
-				const uint64_t div = udiv(p_val[9], p_val[8], order[8] + 1, mul_carry);
+				core::widening_mul_result<uint64_t> mul_res;
+				core::borrowing_sub_result<uint64_t> sub_res0;
+				core::borrowing_sub_result<uint64_t> sub_res1;
 
-				borrow = subborrow(0, p_val[0], umul(order[0], div, mul_carry), p_val[0]);
+				mul_res  = core::widening_mul<uint64_t>(order[0], div);
+				sub_res0 = core::borrowing_sub<uint64_t>(p_val[0], mul_res.low_bits, false); p_val[0] = sub_res0.low_bits;
 
+				sub_res1.overflow = 0;
 				for(uint8_t i = 1; i < 9; ++i)
 				{
-					borrow  = subborrow(borrow , p_val[i], mul_carry                     , tmp);
-					borrow2 = subborrow(borrow2, tmp     , umul(order[i], div, mul_carry), p_val[i]);
+					sub_res0 = core::borrowing_sub<uint64_t>(p_val[i], mul_res.high_bits, sub_res0.overflow);
+					mul_res  = core::widening_mul<uint64_t>(order[i], div);
+					sub_res1 = core::borrowing_sub<uint64_t>(sub_res0.low_bits, mul_res.low_bits, sub_res1.overflow);
+					p_val[i] = sub_res1.low_bits;
 				}
-
-				//subborrow(borrow, p_val[9], mul_carry, p_val[9]);  //doesn't matter if zeroed
+				//core::borrowing_sub<uint64_t>(p_val[9], mul_res.high_bits, sub_res0.overflow); //doesn't matter if zeroed
 			}
 		}
 
@@ -1232,16 +1080,17 @@ namespace crypto
 
 		static void order_add(block_t& p_1, const block_t& p_2)
 		{
-			uint8_t carry;
-			carry = addcarry(0    , p_1[0], p_2[0], p_1[0]);
-			carry = addcarry(carry, p_1[1], p_2[1], p_1[1]);
-			carry = addcarry(carry, p_1[2], p_2[2], p_1[2]);
-			carry = addcarry(carry, p_1[3], p_2[3], p_1[3]);
-			carry = addcarry(carry, p_1[4], p_2[4], p_1[4]);
-			carry = addcarry(carry, p_1[5], p_2[5], p_1[5]);
-			carry = addcarry(carry, p_1[6], p_2[6], p_1[6]);
-			carry = addcarry(carry, p_1[7], p_2[7], p_1[7]);
-			        addcarry(carry, p_1[8], p_2[8], p_1[8]);
+			core::carrying_add_result<uint64_t> add_res;
+
+			add_res = core::carrying_add<uint64_t>(p_1[0], p_2[0], false           ); p_1[0] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_1[1], p_2[1], add_res.overflow); p_1[1] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_1[2], p_2[2], add_res.overflow); p_1[2] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_1[3], p_2[3], add_res.overflow); p_1[3] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_1[4], p_2[4], add_res.overflow); p_1[4] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_1[5], p_2[5], add_res.overflow); p_1[5] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_1[6], p_2[6], add_res.overflow); p_1[6] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_1[7], p_2[7], add_res.overflow); p_1[7] = add_res.low_bits;
+			add_res = core::carrying_add<uint64_t>(p_1[8], p_2[8], add_res.overflow); p_1[8] = add_res.low_bits;
 
 			if(order_should_reduce(p_1))
 			{

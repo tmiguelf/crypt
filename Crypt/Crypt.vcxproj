@@ -65,7 +65,6 @@
     <ClInclude Include="include\Crypt\hash\crc.hpp" />
     <ClInclude Include="include\Crypt\hash\sha2.hpp" />
     <ClInclude Include="include\Crypt\utils.hpp" />
-    <ClInclude Include="src\codec\extended_precision.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\codec\AES.cpp" />
