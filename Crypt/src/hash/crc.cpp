@@ -33,6 +33,7 @@
 #include <CoreLib/core_type.hpp>
 #include <CoreLib/core_endian.hpp>
 #include <CoreLib/core_cpu.hpp>
+#include <CoreLib/core_extra_compiler.hpp>
 
 #include <Crypt/utils.hpp>
 
@@ -359,12 +360,12 @@ namespace
 		static aligned_cb_t const   trasform_aligned;// = core::amd64::CPU_feature_su::SSE42() ? trasform_a_intri : trasform_a_soft;
 
 #else
-		static inline uint32_t trasform_unaligned(uint32_t p_current, const std::span<const uint8_t> p_data)
+		static FORCE_INLINE uint32_t trasform_unaligned(uint32_t p_current, const std::span<const uint8_t> p_data)
 		{
 			return trasform_u_soft(p_current, p_data);
 		}
 
-		static inline uint32_t trasform_aligned(const uint32_t p_current, const std::span<const uint64_t> p_data)
+		static FORCE_INLINE uint32_t trasform_aligned(const uint32_t p_current, const std::span<const uint64_t> p_data)
 		{
 			return trasform_a_soft(p_current, p_data);
 		}
