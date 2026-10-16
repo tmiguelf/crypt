@@ -1282,7 +1282,7 @@ namespace crypto
 		//x = X/Z, y = Y/Z
 
 		using projective_point_t = Curve_E521::projective_point_t;
-		projective_point_t R0{Curve_E521::neutral.m_x, Curve_E521::neutral.m_y, {1, 0, 0, 0, 0, 0, 0, 0, 0}};
+		projective_point_t R0{{Curve_E521::neutral.m_x, Curve_E521::neutral.m_y}, {1, 0, 0, 0, 0, 0, 0, 0, 0}};
 		projective_point_t R1;
 
 		memcpy(R1.m_x.data(), p_public_key.m_x.data(), sizeof(block_t));

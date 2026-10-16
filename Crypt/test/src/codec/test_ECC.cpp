@@ -34,7 +34,6 @@
 #include <CoreLib/core_endian.hpp>
 
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 
 #include <Crypt/codec/ECC.hpp>
 #include <Crypt/hash/sha2.hpp>
@@ -47,32 +46,29 @@
 
 TEST(codec_asymmetric, ED25519_gen_public)
 {
-	using key_t   = crypto::Ed25519::key_t;
-	using point_t = crypto::Ed25519::point_t;
-
-	constexpr uintptr_t key_size = sizeof(key_t);
+	constexpr uintptr_t key_size = sizeof(crypto::Ed25519::key_t);
 
 	struct TestCase
 	{
-		key_t private_key;
-		key_t public_key;
+		crypto::Ed25519::key_t private_key;
+		crypto::Ed25519::key_t public_key;
 	};
 
 	testUtils::PairList cases = testUtils::getPrivatePublicKeyList("../test_vectors/tests.scef", U"Ed25519_hashed", key_size, key_size);
 
 	for(const testUtils::DataPair& tcase : cases)
 	{
-		key_t private_key;
-		key_t expected_public_key;
+		crypto::Ed25519::key_t private_key;
+		crypto::Ed25519::key_t expected_public_key;
 
 		memcpy(private_key.data(), tcase.d0.data(), key_size);
 		memcpy(expected_public_key.data(), tcase.d1.data(), key_size);
 
-		point_t computed_key;
-		key_t compressed_key;
+		crypto::Ed25519::point_t computed_key;
+		crypto::Ed25519::key_t compressed_key;
 	
 		{
-			key_t hashed_private_key;
+			crypto::Ed25519::key_t hashed_private_key;
 			crypto::Ed25519::hashed_private_key(private_key, hashed_private_key);
 			crypto::Ed25519::public_key(hashed_private_key, computed_key);
 		}
@@ -257,18 +253,15 @@ TEST(codec_asymmetric, ED25519_signature)
 
 	const std::span<const uint8_t, 32> message_digest{reinterpret_cast<uint8_t*>(rand_hash.data()), 32};
 
-	using point_t = crypto::Ed25519::point_t;
-	using key_t = crypto::Ed25519::key_t;
-
-	point_t public_key;
+	crypto::Ed25519::point_t public_key;
 
 	crypto::Ed25519::public_key(secret, public_key);
 
-	point_t real_r;
-	key_t real_s;
+	crypto::Ed25519::point_t real_r;
+	crypto::Ed25519::key_t real_s;
 
-	point_t fake_r;
-	key_t fake_s;
+	crypto::Ed25519::point_t fake_r;
+	crypto::Ed25519::key_t fake_s;
 
 	crypto::Ed25519::sign(secret, message_digest, context, real_r, real_s);
 	crypto::Ed25519::sign(fake, message_digest, context, fake_r, fake_s);
@@ -426,16 +419,13 @@ TEST(codec_asymmetric, Ed521_point_on_curve)
 
 TEST(codec_asymmetric, Ed521_signature)
 {
-	using point_t = crypto::Ed521::point_t;
-	using key_t = crypto::Ed521::key_t;
-
 	std::random_device rd;  //Will be used to obtain a seed for the random number engine
 	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
 	std::uniform_int_distribution<uint64_t> distrib(0, std::numeric_limits<uint64_t>::max());
 
-	alignas(8) key_t secret;
-	alignas(8) key_t fake;
-	alignas(8) key_t rand_hash;
+	alignas(8) crypto::Ed521::key_t secret;
+	alignas(8) crypto::Ed521::key_t fake;
+	alignas(8) crypto::Ed521::key_t rand_hash;
 
 	std::array<uint8_t, 256> rand_context;
 	const uint8_t context_length = static_cast<uint8_t>(distrib(gen));
@@ -499,15 +489,15 @@ TEST(codec_asymmetric, Ed521_signature)
 	const std::span<const uint8_t, 66> message_digest{reinterpret_cast<uint8_t*>(rand_hash.data()), 66};
 
 
-	point_t public_key;
+	crypto::Ed521::point_t public_key;
 
 	crypto::Ed521::public_key(secret, public_key);
 
-	point_t real_r;
-	key_t real_s;
+	crypto::Ed521::point_t real_r;
+	crypto::Ed521::key_t real_s;
 
-	point_t fake_r;
-	key_t fake_s;
+	crypto::Ed521::point_t fake_r;
+	crypto::Ed521::key_t fake_s;
 
 	crypto::Ed521::sign(secret, message_digest, context, real_r, real_s);
 	crypto::Ed521::sign(fake, message_digest, context, fake_r, fake_s);

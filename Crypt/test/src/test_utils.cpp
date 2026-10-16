@@ -29,7 +29,6 @@
 
 #include <SCEF/SCEF.hpp>
 
-
 #include <CoreLib/core_console.hpp>
 #include <CoreLib/toPrint/toPrint.hpp>
 #include <CoreLib/toPrint/toPrint_filesystem.hpp>

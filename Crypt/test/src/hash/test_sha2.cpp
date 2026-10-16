@@ -33,7 +33,6 @@
 #include <CoreLib/core_endian.hpp>
 
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 
 #include <Crypt/hash/sha2.hpp>
 

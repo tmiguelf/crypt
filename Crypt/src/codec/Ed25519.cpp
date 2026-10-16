@@ -968,7 +968,7 @@ namespace crypto
 		//x = X/Z, y = Y/Z, x * y = T/Z
 
 		using projective_point_t = Curve_25519::projective_point_t;
-		projective_point_t R0{Curve_25519::neutral.m_x, Curve_25519::neutral.m_y, {1, 0, 0, 0}, {0, 0, 0, 0}};
+		projective_point_t R0{{Curve_25519::neutral.m_x, Curve_25519::neutral.m_y}, {1, 0, 0, 0}, {0, 0, 0, 0}};
 
 		projective_point_t R1;
 

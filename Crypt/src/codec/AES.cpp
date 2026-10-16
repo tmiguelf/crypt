@@ -32,9 +32,6 @@
 
 #include <CoreLib/core_type.hpp>
 
-#if defined(_M_AMD64) || defined(__amd64__)
-#	include <emmintrin.h>
-#endif
 
 namespace crypto
 {

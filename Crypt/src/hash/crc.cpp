@@ -240,8 +240,8 @@ namespace
 			using CRC_Helper = CRC_Help<CRC_32C::digest_t, CRC_32C::poly, CRC_32C::reciprocal>;
 			for(const uint64_t tpoint : p_data)
 			{
-				p_current = CRC_Helper::soft_multi_byte(p_current, *reinterpret_cast<const uint32_t*>(&tpoint));
-				p_current = CRC_Helper::soft_multi_byte(p_current, *(reinterpret_cast<const uint32_t*>(&tpoint) + 1));
+				p_current = CRC_Helper::soft_multi_byte(p_current, static_cast<uint32_t>(tpoint));
+				p_current = CRC_Helper::soft_multi_byte(p_current, static_cast<uint32_t>(tpoint >> 32));
 			}
 			return p_current;
 		}
